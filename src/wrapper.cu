@@ -34,9 +34,25 @@
 #include "wrapper.cuh"
 #include "opt_kernel.cuh"
 
+//__global__ void find_route(int *route, int num_cities) ;
+//{
+//
+//	printf("Here");
+//	printf("Here");
+//
+//  __shared__ int cache[1024];
+//
+//  int idx = threadIdx.x + blockIdx.x * blockDim.x;
+//
+////   if (idx < num_cities) {
+//	   printf("idx = %d", idx);
+////   }
+//}
+
 __device__ int d_distance;
 
 __host__ void HandleError(cudaError_t err, const char *file, int line) {
+	printf("cudaSuccess = %d and err = %d\n", cudaSuccess, err);
   if (err != cudaSuccess) {
     printf( "%s in %s at line %d\n", cudaGetErrorString( err ),	file, line );
     exit( EXIT_FAILURE );
@@ -101,52 +117,85 @@ int getGPU_Info(void) {
 }
 
 // C++ CUDA Kernel wrapper
-void cuda_function(int *route, int *distance, int num_cities, float *crap) {
+//void cuda_function(int *route, int *distance, int num_cities) {
+//
+//  int blockSize;      // The launch configurator returned block size
+//  int minGridSize;    // The minimum grid size needed to achieve the maximum occupancy for a full device launch
+//  int gridSize;       // The actual grid size needed, based on input size
+//
+//  // Create variables for GPU
+//  int *d_route;
+//
+//  // Allocate memory on GPU
+////  printf("Here0\n");
+////  HANDLE_ERROR(cudaMalloc((void**)&d_route, (num_cities+1) * sizeof(int)));
+//
+//  // Memory set to zero
+////  HANDLE_ERROR(cudaMemset(d_matrix, 0, (num_cities-2) * (num_cities+1) * sizeof(int)));
+//
+//  // Copy from CPU to GPU
+////  printf("Here1\n");
+////  HANDLE_ERROR(cudaMemcpy(d_route, route, (num_cities+1) * sizeof(int), cudaMemcpyHostToDevice));
+////  HANDLE_ERROR(cudaMemcpyToSymbol(d_distance, distance, sizeof(int)));
+//
+//  // Determine thread size and block size
+//  //   HANDLE_ERROR(cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, find_route, 0, 0));
+//  gridSize = (num_cities + threadsPerBlock - 1) / threadsPerBlock;
+//
+//  //   printf("minGridSize = %d\n", minGridSize);
+//  printf("blockSize = %d\n", threadsPerBlock);
+//  printf("gridSize = %d\n\n", gridSize);
+//
+//  // Execute kernel
+//  find_route<<<gridSize, threadsPerBlock>>>(d_route, num_cities);
+//
+//  // Sync Device
+////  printf("Here2\n");
+//  HANDLE_ERROR(cudaDeviceSynchronize());
+//
+//  // Copy from GPU to CPU
+////  printf("Here3\n");
+////  HANDLE_ERROR(cudaMemcpy(route, d_route, (num_cities+1) * sizeof(int), cudaMemcpyDeviceToHost));
+////  HANDLE_ERROR(cudaMemcpyFromSymbol(distance, d_distance, sizeof(int)));
+//
+//  for (int i=0; i<num_cities+1; i++) {
+//    printf("%d ", route[i]);
+//  }
+//  printf("\n\n");
+//
+//  cudaDeviceReset();
+//}
+
+void cuda_function(int *route, int num_cities) {
   
-  int blockSize;      // The launch configurator returned block size 
-  int minGridSize;    // The minimum grid size needed to achieve the maximum occupancy for a full device launch 
-  int gridSize;       // The actual grid size needed, based on input size 
+  int blockSize;      // The launch  returned block size
+  int gridSize;       // The actual grid size needed
   
   // Create variables for GPU
   int *d_route;
-  float *d_crap;
-  
-  // Construct and array to hold all thread-local routes.
-  int *d_matrix;
   
   // Allocate memory on GPU
-  HANDLE_ERROR(cudaMalloc((void**)&d_route, (num_cities+1) * sizeof(int)));
-  HANDLE_ERROR(cudaMalloc((void**)&d_crap, num_cities * 3 * sizeof(float)));
-  HANDLE_ERROR(cudaMalloc((void**)&d_matrix, (num_cities-2) * (num_cities+1) * sizeof(int))); 
-  
-  // Memory set to zero
-  HANDLE_ERROR(cudaMemset(d_matrix, 0, (num_cities-2) * (num_cities+1) * sizeof(int)));
   
   // Copy from CPU to GPU
-  HANDLE_ERROR(cudaMemcpy(d_route, route, (num_cities+1) * sizeof(int), cudaMemcpyHostToDevice));
-  HANDLE_ERROR(cudaMemcpy(d_crap, crap, num_cities * 3 * sizeof(int), cudaMemcpyHostToDevice));
-  HANDLE_ERROR(cudaMemcpyToSymbol(d_distance, distance, sizeof(int)));
   
   // Determine thread size and block size
-  //   HANDLE_ERROR(cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, find_route, 0, 0));
   gridSize = (num_cities + threadsPerBlock - 1) / threadsPerBlock;
   
-  //   printf("minGridSize = %d\n", minGridSize);
   printf("blockSize = %d\n", threadsPerBlock);
-  printf("gridSize = %d\n", gridSize);
+  printf("gridSize = %d\n\n", gridSize);
   
   // Execute kernel
-  //   find_route<<<gridSize, threadsPerBlock>>>(d_route, num_cities, d_crap, d_matrix);
+  find_route<<<gridSize, threadsPerBlock>>>(d_route, num_cities);
   
-  // Sync Device 
+  // Sync Device
   HANDLE_ERROR(cudaDeviceSynchronize());
   
   // Copy from GPU to CPU
-  HANDLE_ERROR(cudaMemcpy(route, d_route, (num_cities+1) * sizeof(int), cudaMemcpyDeviceToHost));
-  HANDLE_ERROR(cudaMemcpyFromSymbol(distance, d_distance, sizeof(int)));
   
   for (int i=0; i<num_cities+1; i++) {
     printf("%d ", route[i]);
   }
-  printf("\n");
+  printf("\n\n");
+
+  cudaDeviceReset();
 }

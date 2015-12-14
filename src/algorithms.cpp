@@ -95,9 +95,10 @@ int tsp::read_file(int argc, char *argv[], struct city_coords *coords)
     filename = argv[1];
   } else {
     if (argc==1) {
-      printf("Enter inputfile\n");
-      std::cin >> input;
-      filename = input.c_str();
+//      printf("Enter inputfile\n");
+//      std::cin >> input;
+//      filename = input.c_str();
+    	filename = ("TSPLIB/burma14.tsp");
     } else {
       printf("usage: tsp_2opt <input file (*.tsp)>");
       exit(1);
@@ -200,40 +201,42 @@ void tsp::two_opt()
     improve = false;
     jump = false;
     
-    for (int i=1; i<num_cities-1; i++) {
-      
-      if(jump) break;
-      temp_distance = distance;
-      
-      for (int j=i+1; j<num_cities; j++) {
-	
-	swap_two(i, j);
-	// 	print(new_route);
-	
-	// Calculate new distance
-	new_distance = (obj.*pFun)(new_route, num_cities, coords);
-	// 	printf("Distance = %d\n", new_distance);
-	if (new_distance < temp_distance) {
-	  // 	  printf("New distance = %d\n", new_distance);
-	  temp_distance = new_distance;
-	  
-	  temp = temp_route;
-	  temp_route = new_route;
-	  new_route = temp;
-	  
-	  improve = true;
-	  jump = true;
-	  update = true;
-	}
-      }
-      if (update) {
-	distance = temp_distance;
-	temp = route;
-	route = temp_route;
-	temp_route = temp;
-	update = false;
-      }
-    }
+    cuda_function(route, num_cities);
+
+//    for (int i=1; i<num_cities-1; i++) {
+//
+//      if(jump) break;
+//      temp_distance = distance;
+//
+//      for (int j=i+1; j<num_cities; j++) {
+//
+//	swap_two(i, j);
+//	// 	print(new_route);
+//
+//	// Calculate new distance
+//	new_distance = (obj.*pFun)(new_route, num_cities, coords);
+//	// 	printf("Distance = %d\n", new_distance);
+//	if (new_distance < temp_distance) {
+//	  // 	  printf("New distance = %d\n", new_distance);
+//	  temp_distance = new_distance;
+//
+//	  temp = temp_route;
+//	  temp_route = new_route;
+//	  new_route = temp;
+//
+//	  improve = true;
+//	  jump = true;
+//	  update = true;
+//	}
+//      }
+//      if (update) {
+//	distance = temp_distance;
+//	temp = route;
+//	route = temp_route;
+//	temp_route = temp;
+//	update = false;
+//      }
+//    }
   }
   
   //  printf("Optimized Route\n");

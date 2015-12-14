@@ -10,7 +10,7 @@ SRCDIR		:= src
 OBJDIR		:= obj
 
 CPPFLAGS	:= -O3 -m64 -fPIC -Wall -Wextra -std=c++11
-NVCCFLAGS  	:= -O3 -m64 -arch=sm_52 -std=c++11 -w --use_fast_math -res-usage -Xptxas -v
+NVCCFLAGS  	:= -O3 -m64 -arch=sm_30 -std=c++11 -w --use_fast_math -res-usage -Xptxas -v
 CUDA_LINK_FLAGS := -lcuda -lcudart 
 
 OBJECTS :=\

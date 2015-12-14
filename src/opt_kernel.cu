@@ -32,115 +32,18 @@
 #include "opt_kernel.cuh"
 #include "algorithms.h"
 
-#define CRAP 15
 #define WIDTH 3
 
+ __global__ void find_route(int *route, int num_cities) {
 
+   __shared__ int cache[1024];
 
-// __global__ void find_route(int *route, int num_cities, float *crap, int *matrix) {
-//   
-//   __shared__ int cache[threadsPerBlock];
-//   
-//   int idx = threadIdx.x + blockIdx.x * blockDim.x;
-//   
-//   int *temp;
-//   int distance, i, j;
-//   int swaps = num_cities - 2;
-//   
-//   //   bool improve = true;
-//   bool jump = false;
-//   
-//   while (idx < num_cities) {
-// //     if(idx == 0) {
-// //       printf("hello\n");
-// //       for (int i=0; i<num_cities+1; i++) {
-// // 	printf("%d ", route[i]);
-// //       }
-// //       printf("\n");
-// //     }
-//     
-//     while (improve) {
-//       improve = false;
-//       jump = false;
-//       
-//       for (int a=0; a<swaps; a++) {
-// 	
-// 	if (jump) break;
-// 	
-// 	if (idx < (swaps - a)) {
-// 	  distance = 0;
-// 	  i = a+1;
-// 	  j = idx + a+2;
-// 	  
-// 	  if(idx == 0) {
-// 	    printf("hello1\n");
-// 	    for (int i=0; i<num_cities+1; i++) {
-// 	      printf("%d ", route[i]);
-// 	    }
-// 	    printf("\n");
-// 	  }
-// 	  
-// 	  // Execute swap two algorithm
-// 	  swap_two(idx, i, j, route, matrix, num_cities);
-// 	  
-// 	  if(idx == 0) {
-// 	    printf("hello2\n");
-// 	    for (int i=0; i<num_cities+1; i++) {
-// 	      printf("%d ", route[i]);
-// 	    }
-// 	    printf("\n");
-// 	  }
-// 	  
-// 	  // Calculate distance of new route
-// 	  att(idx, matrix, num_cities, crap, &distance);
-// 	  
-// 	  // Determine if new distance is shorter than original
-// 	  if (distance < d_distance) {
-// 	    cache[threadIdx.x] = distance;
-// 	  }
-// 	}
-// 	
-// 	if(idx==0) {
-// 	  printf("this\n");
-// 	  for (int i=0; i<num_cities+1; i++) {
-// 	    printf("%d ", cache[i]);
-// 	  }
-// 	  printf("\n");
-// 	}
-// 	
-// 	__syncthreads();
-// 	
-// 	if (idx==0) {
-// 	  for (int i=0; i<threadsPerBlock; i++) {
-// 	    if ((cache[i] > 0) && (cache[i] < d_distance)) {
-// 	      d_distance = cache[i];
-// 	      	      printf("New distance = %d\n", d_distance);
-// 	      	      printf("New route @ %d\n", i);
-// 	      	      for (int j=0; j<(num_cities+1); j++) {
-// 	      		printf("%d ", matrix[i*15+j]);
-// 	      	      }
-// 	      	      printf("\n\n");
-// 	      
-// 	      memcpy(route, matrix + (i*(num_cities+1)+0), (num_cities + 1) * sizeof(int));
-// 	      
-// 	      jump = true;
-// 	      improve = true;
-// 	      printf("New route\n");
-// 	      for (int j=0; j<(num_cities+1); j++) {
-// 		printf("%d ", route[j]);
-// 	      }
-// 	      printf("\n\n");
-// 	    }
-// 	  }
-// 	}
-// 	cache[threadIdx.x] = 0;	// Set shared memory to 0
-//       }
-//     }
-//     
-//     // Increment idx to exit while loop
-//     idx += num_cities + 1;
+   int idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+//   if (idx < num_cities) {
+	   printf("idx = %d\n", idx);
 //   }
-// }
+}
 
 // __device__ void swap_two(int idx, int i, int j, int *route, int *matrix, int num_cities) {
 //   int count = 0;
