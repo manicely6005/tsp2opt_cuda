@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include "opt_kernel.cuh"
+#include "wrapper.cuh"
 #include "algorithms.h"
 
 #define WIDTH 3
@@ -39,19 +40,35 @@ __global__ void find_route(int *route, int num_cities) {
    __shared__ int cache[1024];
 
    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-   int apple[1];
 
    if (idx < 8) {
 	   route[idx] = route[idx] + 1;
    }
 
    if (idx == 0) {
-//	   printf("best = %d, %d, %d\n", open.i, open.j, open.minchange);
-//	   best.i = best.i+1000;
-//	   best.j = best.j+1000;
-//	   best.minchange = best.minchange+1000;
-	   printf("best1 = %d, %d, %d\n", best.i, best.j, best.minchange);
+
+	   printf("best = %d, %d, %d\n", best.i, best.j, best.minchange);\
+	   best.i = best.i + 5;
+	   best.minchange  = 1000;
    }
+}
+
+/* This is a wrapper function which allows the wrapper file to copy to a symbol
+ * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
+ * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
+ * where you want to use it. Link to more info below.
+ * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
+__host__ void setParam(struct best_2opt zero) {
+	cudaMemcpyToSymbol(best, &zero, sizeof(struct best_2opt));
+}
+
+/* This is a wrapper function which allows the wrapper file to copy to a symbol
+ * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
+ * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
+ * where you want to use it. Link to more info below.
+ * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
+__host__ void getParam(struct best_2opt * out) {
+	cudaMemcpyFromSymbol(out, best, sizeof(struct best_2opt));
 }
 
 // __device__ void swap_two(int idx, int i, int j, int *route, int *matrix, int num_cities) {

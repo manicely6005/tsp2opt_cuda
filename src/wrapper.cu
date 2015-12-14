@@ -105,6 +105,7 @@ void cuda_function(int *route, int distance, int num_cities) {
   
   struct best_2opt zero;
   struct best_2opt out;
+
   zero.i = 1;
   zero.j = 2;
   zero.minchange = 500;
@@ -118,7 +119,12 @@ void cuda_function(int *route, int distance, int num_cities) {
   // Copy from CPU to GPU
   HANDLE_ERROR(cudaMemcpy(d_route, route, (num_cities+1) * sizeof(int), cudaMemcpyHostToDevice));
 
-  HANDLE_ERROR(cudaMemcpyToSymbol(best, &zero, sizeof(best_2opt)));
+  /* This is a wrapper function which allows the wrapper file to copy to a symbol
+   * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
+   * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
+   * where you want to use it. Link to more info below.
+   * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
+  setParam(zero);
 
   // Determine thread size and block size
   gridSize = (num_cities + threadsPerBlock - 1) / threadsPerBlock;
@@ -134,8 +140,13 @@ void cuda_function(int *route, int distance, int num_cities) {
   
   // Copy from GPU to CPU
   HANDLE_ERROR(cudaMemcpy(route, d_route, (num_cities+1) * sizeof(int), cudaMemcpyDeviceToHost));
-  int data2;
-  HANDLE_ERROR(cudaMemcpyFromSymbol(&out, best, sizeof(best_2opt)));
+
+  /* This is a wrapper function which allows the wrapper file to copy to a symbol
+   * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
+   * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
+   * where you want to use it. Link to more info below.
+   * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
+  getParam(&out);
 
   printf("out = %d, %d, %d\n", out.i, out.j, out.minchange);
 

@@ -26,9 +26,6 @@
  *
  ******************************************************************************/
 
-// #include <cuda.h>
-// #include <cuda_runtime.h>
-
 const int threadsPerBlock = 16;
 
 int getGPU_Info(void);
