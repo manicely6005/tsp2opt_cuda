@@ -178,30 +178,25 @@ int tsp::read_file(int argc, char *argv[], struct city_coords *coords)
 
 void tsp::two_opt()
 {
-  int *temp;
-  int distance, new_distance, temp_distance;
+//  int *temp;
+  int distance; //, new_distance, temp_distance;
   
   init_route();
   
   // Check GPU Info
   getGPU_Info();
-
-  printf("Size of int = %lu\n", sizeof(int));
-  printf("Size of float = %lu\n", sizeof(float));
   
   // Calculate initial route distance
   distance = (obj.*pFun)(route, num_cities, coords);
   printf("Initial distance = %d\n\n", distance);
   
   bool improve = true;
-  bool update = false;
-  bool jump;
   
   while(improve) {
     improve = false;
-    jump = false;
+//    jump = false;
     
-    cuda_function(route, num_cities);
+    cuda_function(route, distance, num_cities);
 
 //    for (int i=1; i<num_cities-1; i++) {
 //

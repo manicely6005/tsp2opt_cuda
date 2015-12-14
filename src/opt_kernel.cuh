@@ -32,9 +32,11 @@
 
  __global__ void find_route(int *route, int N);
 
-//__device__ int count = 1;
-//__device__ int jump = 2;
-//__device__ bool improve = true;
+ __device__ struct best_2opt {
+	 unsigned int i;
+	 unsigned int j;
+	 int minchange;
+ } best;
 
 // __device__ void swap_two(int idx, int i, int j, int *route, int *matrix, int N);
 // 

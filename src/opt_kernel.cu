@@ -34,15 +34,24 @@
 
 #define WIDTH 3
 
- __global__ void find_route(int *route, int num_cities) {
+__global__ void find_route(int *route, int num_cities) {
 
    __shared__ int cache[1024];
 
    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+   int apple[1];
 
-//   if (idx < num_cities) {
-	   printf("idx = %d\n", idx);
-//   }
+   if (idx < 8) {
+	   route[idx] = route[idx] + 1;
+   }
+
+   if (idx == 0) {
+//	   printf("best = %d, %d, %d\n", open.i, open.j, open.minchange);
+//	   best.i = best.i+1000;
+//	   best.j = best.j+1000;
+//	   best.minchange = best.minchange+1000;
+	   printf("best1 = %d, %d, %d\n", best.i, best.j, best.minchange);
+   }
 }
 
 // __device__ void swap_two(int idx, int i, int j, int *route, int *matrix, int num_cities) {
