@@ -26,11 +26,8 @@
  *
  ******************************************************************************/
 
-// #include <cuda.h>
-// #include <cuda_runtime.h>
-
 const int threadsPerBlock = 16;
 
-extern int getGPU_Info(void);
+int getGPU_Info(void);
 
-extern void cuda_function(int *route, int N);
+void cuda_function(int *route, int distance, int N);

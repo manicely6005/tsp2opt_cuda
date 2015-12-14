@@ -30,11 +30,30 @@
 #include <cuda_runtime.h>
 #include <vector>
 
+struct best_2opt {
+	 unsigned int i;
+	 unsigned int j;
+	 int minchange;
+ };
+
  __global__ void find_route(int *route, int N);
 
-//__device__ int count = 1;
-//__device__ int jump = 2;
-//__device__ bool improve = true;
+ __device__ best_2opt best;
+
+ /* This is a wrapper function which allows the wrapper file to copy to a symbol
+  * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
+  * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
+  * where you want to use it. Link to more info below.
+  * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
+ __host__ void setParam(struct best_2opt zero);
+
+ /* This is a wrapper function which allows the wrapper file to copy to a symbol
+  * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
+  * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
+  * where you want to use it. Link to more info below.
+  * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
+ __host__ void getParam(struct best_2opt * out);
+
 
 // __device__ void swap_two(int idx, int i, int j, int *route, int *matrix, int N);
 // 

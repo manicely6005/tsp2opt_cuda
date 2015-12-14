@@ -10,7 +10,7 @@ SRCDIR		:= src
 OBJDIR		:= obj
 
 CPPFLAGS	:= -O3 -m64 -fPIC -Wall -Wextra -std=c++11
-NVCCFLAGS  	:= -O3 -m64 -arch=sm_30 -std=c++11 -w --use_fast_math -res-usage -Xptxas -v
+NVCCFLAGS  	:= -O3 -m64 -std=c++11 -w --use_fast_math -res-usage -Xptxas -v
 CUDA_LINK_FLAGS := -lcuda -lcudart 
 
 OBJECTS :=\
@@ -66,8 +66,8 @@ $(OBJDIR)/algorithms.o: $(SRCDIR)/algorithms.cpp $(SRCDIR)/algorithms.h $(SRCDIR
 $(OBJDIR)/edge_weight.o: $(SRCDIR)/edge_weight.cpp $(SRCDIR)/edge_weight.h $(SRCDIR)/algorithms.h
 	$(CXX_PATH) $(CPPFLAGS) -o $(OBJDIR)/edge_weight.o -c $(SRCDIR)/edge_weight.cpp
 	
-$(OBJDIR)/opt_kernel.o: $(SRCDIR)/opt_kernel.cu $(SRCDIR)/algorithms.h
+$(OBJDIR)/opt_kernel.o: $(SRCDIR)/opt_kernel.cu $(SRCDIR)/opt_kernel.cuh $(SRCDIR)/algorithms.h
 	$(NVCC_PATH) $(NVCCFLAGS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/opt_kernel.o -c $(SRCDIR)/opt_kernel.cu
 	
-$(OBJDIR)/wrapper.o: $(SRCDIR)/wrapper.cu $(SRCDIR)/wrapper.cuh
+$(OBJDIR)/wrapper.o: $(SRCDIR)/wrapper.cu $(SRCDIR)/wrapper.cuh $(SRCDIR)/opt_kernel.cuh
 	$(NVCC_PATH) $(NVCCFLAGS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/wrapper.o -c $(SRCDIR)/wrapper.cu
