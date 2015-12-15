@@ -38,53 +38,57 @@ edge_weight::edge_weight()
 {
 }
 
+//Destructor clears the deques
 edge_weight::~edge_weight()
 {
 }
 
-int edge_weight::euc2d(int *route, int num_cities, struct city_coords *coords)
+int edge_weight::euc2d(int num_cities, struct city_coords *coords)
 {
   int distance = 0;
-  int j, xi, yi, xj, yj, xd, yd;
+  int j;
+  float xi, yi, xj, yj, xd, yd;
+
   for (int i=0; i<num_cities; i++) {
     j = i + 1;
     
     // route[i] - 1 convert the 1 based arr to the 0 based coord
-    xi = coords[route[i]-1].x;
-    yi = coords[route[i]-1].y;
-    xj = coords[route[j]-1].x;
-    yj = coords[route[j]-1].y;
+    xi = coords[i].x;
+    yi = coords[i].y;
+    xj = coords[j].x;
+    yj = coords[j].y;
     
     xd = pow((xi - xj), 2.0);
     yd = pow((yi - yj), 2.0);
     
-    distance += floor(sqrt(xd + yd) + 0.5);
+    distance += (int) floor(sqrt(xd + yd) + 0.5);
   }
   return (distance);
 }
 
-int edge_weight::ceil2d(int *route, int num_cities, struct city_coords *coords)
+int edge_weight::ceil2d(int num_cities, struct city_coords *coords)
 {
   int distance = 0;
-  int j, xi, yi, xj, yj, xd, yd;
+  int j;
+  float xi, yi, xj, yj, xd, yd;
   for (int i=0; i<num_cities; i++) {
     j = i + 1;
     
     // arr[i] - 1 convert the 1 based arr to the 0 based coord
-    xi = coords[route[i]-1].x;
-    yi = coords[route[i]-1].y;
-    xj = coords[route[j]-1].x;
-    yj = coords[route[j]-1].y;
+    xi = coords[i].x;
+    yi = coords[i].y;
+    xj = coords[j].x;
+    yj = coords[j].y;
     
     xd = pow((xi - xj), 2.0);
     yd = pow((yi - yj), 2.0);
     
-    distance += ceil(sqrt(xd + yd));
+    distance += (int) ceil(sqrt(xd + yd));
   }
   return (distance);
 }
 
-int edge_weight::geo(int *route, int num_cities, struct city_coords *coords)
+int edge_weight::geo(int num_cities, struct city_coords *coords)
 {
   int distance = 0;
   int deg, j; 
@@ -96,10 +100,10 @@ int edge_weight::geo(int *route, int num_cities, struct city_coords *coords)
     j = i + 1;
     
     // arr[i] - 1 convert the 1 based arr to the 0 based coord
-    xi = coords[route[i]-1].x;
-    yi = coords[route[i]-1].y;
-    xj = coords[route[j]-1].x;
-    yj = coords[route[j]-1].y;
+    xi = coords[i].x;
+    yi = coords[i].y;
+    xj = coords[j].x;
+    yj = coords[j].y;
     
     deg = (int) xi;
     min = xi - deg;
@@ -129,20 +133,20 @@ int edge_weight::geo(int *route, int num_cities, struct city_coords *coords)
   return (distance);
 }
 
-int edge_weight::att(int *route, int num_cities, struct city_coords *coords)
+int edge_weight::att(int num_cities, struct city_coords *coords)
 {
   int distance = 0;
-  int dij, tij, j, xi, xj, yi, yj, xd, yd;
-  float rij;
+  int dij, tij, j;
+  float rij, xi, xj, yi, yj, xd, yd;
   
   for (int i=0; i<num_cities; i++) {
     j = i + 1;
     
     // arr[i] - 1 convert the 1 based arr to the 0 based coord
-    xi = coords[route[i]-1].x;
-    yi = coords[route[i]-1].y;
-    xj = coords[route[j]-1].x;
-    yj = coords[route[j]-1].y;
+    xi = coords[i].x;
+    yi = coords[i].y;
+    xj = coords[j].x;
+    yj = coords[j].y;
     
     xd = pow((xi - xj), 2.0);
     yd = pow((yi - yj), 2.0);

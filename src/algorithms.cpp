@@ -50,9 +50,10 @@ struct tsp_info {
 //Constructor that takes a character string corresponding to an external filename and reads in cities from that file
 tsp::tsp(int argc, char * argv[])
 {
-  coords = new struct city_coords [MAX_CITIES*2];
+  inputCoords = new struct city_coords [MAX_CITIES*2];
+  orderCoords = new struct city_coords [MAX_CITIES*2];
   
-  num_cities = read_file(argc, argv, coords);
+  num_cities = read_file(argc, argv);
   route = new int [num_cities+1];
   new_route = new int [num_cities+1];
   temp_route = new int [num_cities+1];
@@ -78,14 +79,15 @@ tsp::tsp(int argc, char * argv[])
 //Destructor clears the deques
 tsp::~tsp()
 {
-  delete(coords);
+  delete(inputCoords);
+  delete(orderCoords);
   delete(route);
   delete(new_route);
   delete(temp_route);
 }
 
 //Read city data from file into tsp's solution member, returns number of cities added
-int tsp::read_file(int argc, char *argv[], struct city_coords *coords)
+int tsp::read_file(int argc, char *argv[])
 {
   const char *filename;
   std::string input;
@@ -161,9 +163,9 @@ int tsp::read_file(int argc, char *argv[], struct city_coords *coords)
   
   // copy coordinates to structure 
   for (int i=0; i<tsp_info.dim; i++) {
-    coords[i].x = coord[i*3+1];
+    inputCoords[i].x = coord[i*3+1];
     //     printf("coords[i].x = %f\n", coords[i].x);
-    coords[i].y = coord[i*3+2];
+    inputCoords[i].y = coord[i*3+2];
     //     printf("coords[i].y = %f\n", coords[i].y);
   }
   
@@ -181,13 +183,17 @@ void tsp::two_opt()
 //  int *temp;
   int distance; //, new_distance, temp_distance;
   
+  // Calculate initial route
   init_route();
+
+  // Create ordered coordinates
+  creatOrderCoord(route);
   
   // Check GPU Info
   getGPU_Info();
   
   // Calculate initial route distance
-  distance = (obj.*pFun)(route, num_cities, coords);
+  distance = (obj.*pFun)(num_cities, orderCoords);
   printf("Initial distance = %d\n\n", distance);
   
   bool improve = true;
@@ -196,7 +202,7 @@ void tsp::two_opt()
     improve = false;
 //    jump = false;
     
-    cuda_function(route, distance, num_cities, coords);
+    cuda_function(route, distance, num_cities, orderCoords);
 
 //    for (int i=1; i<num_cities-1; i++) {
 //
@@ -275,4 +281,10 @@ void tsp::print(int *arr)
     printf("%d ", arr[i]);
   }
   printf("\n");
+}
+
+void tsp::creatOrderCoord(int *arr) {
+  for (int i=0; i<num_cities+1; i++) {
+    orderCoords[i] = inputCoords[arr[i]-1];
+  }
 }
