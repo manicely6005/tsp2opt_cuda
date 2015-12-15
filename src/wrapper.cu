@@ -34,28 +34,23 @@
 #include "wrapper.cuh"
 #include "opt_kernel.cuh"
 
-__host__ void HandleError(cudaError_t err, const char *file, int line) {
+__host__ void handleError(cudaError_t err, const char *file, int line) {
   if (err != cudaSuccess) {
     printf( "%s in %s at line %d\n", cudaGetErrorString( err ),	file, line );
     exit( EXIT_FAILURE );
   }
 } // HandleError
-#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
+#define HANDLE_ERROR( err ) (handleError( err, __FILE__, __LINE__ ))
 
 int getGPU_Info(void) {
 
   int deviceCount = 0;
   
-  cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
-  
-  if (error_id != cudaSuccess) {
-    printf( "cudaGetDeviceCount returned %d\n-> %s\n", (int)error_id, cudaGetErrorString(error_id) );
-  }
+  HANDLE_ERROR(cudaGetDeviceCount(&deviceCount));
   
   if (deviceCount == 0) {
     printf("There is no device supporting CUDA\n");
-  }
-  else {
+  } else {
     printf("Found %d CUDA Capable device(s)\n", deviceCount);
   }
   
@@ -72,11 +67,8 @@ int getGPU_Info(void) {
     cudaDriverGetVersion(&driverVersion);
     cudaRuntimeGetVersion(&runtimeVersion);
     printf("CUDA Driver Version / Runtime Version %d.%d / %d.%d\n", driverVersion/1000, (driverVersion%100)/10, runtimeVersion/1000, (runtimeVersion%100)/10);
-    
     printf("CUDA Capability Major/Minor version number: %d.%d\n", deviceProp.major, deviceProp.minor);
-    
-    printf("Total amount of global memory: %.0f MBytes (%llu bytes)\n", 
-	   (float)deviceProp.totalGlobalMem/1048576.0f, (unsigned long long) deviceProp.totalGlobalMem);        
+    printf("Total amount of global memory: %.0f MBytes (%llu bytes)\n", (float)deviceProp.totalGlobalMem/1048576.0f, (unsigned long long) deviceProp.totalGlobalMem);
     printf("Total amount of constant memory: %u bytes\n", (unsigned)deviceProp.totalConstMem); 
     printf("Total amount of shared memory per block: %u bytes\n", (unsigned)deviceProp.sharedMemPerBlock);
     printf("Total number of registers available per block: %d\n", deviceProp.regsPerBlock);
@@ -92,13 +84,11 @@ int getGPU_Info(void) {
 	   deviceProp.maxGridSize[1],
 	   deviceProp.maxGridSize[2]);
     printf("\n");
-    
   }
-  
-  return deviceCount;
+  return (deviceCount);
 }
 
-void cuda_function(int *route, int distance, int num_cities) {
+void cuda_function(int *route, int distance, int num_cities, city_coords *coords) {
 
   int blockSize;      // The launch  returned block size
   int gridSize;       // The actual grid size needed
@@ -112,12 +102,15 @@ void cuda_function(int *route, int distance, int num_cities) {
 
   // Create variables for GPU
   int *d_route;
+  city_coords *d_coords;
 
   // Allocate memory on GPU
   HANDLE_ERROR(cudaMalloc((void**)&d_route, (num_cities+1) * sizeof(int)));
+  HANDLE_ERROR(cudaMalloc((void**)&d_coords, num_cities * sizeof(d_coords)));
   
   // Copy from CPU to GPU
   HANDLE_ERROR(cudaMemcpy(d_route, route, (num_cities+1) * sizeof(int), cudaMemcpyHostToDevice));
+  HANDLE_ERROR(cudaMemcpy(d_coords, coords, num_cities * sizeof(d_coords), cudaMemcpyHostToDevice));
 
   /* This is a wrapper function which allows the wrapper file to copy to a symbol
    * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
@@ -132,8 +125,12 @@ void cuda_function(int *route, int distance, int num_cities) {
   printf("blockSize = %d\n", threadsPerBlock);
   printf("gridSize = %d\n\n", gridSize);
   
+  //to calculate the number of jobs/2-opt changes and iteration number for each thread
+  unsigned long long counter = (long)(num_cities-2)*(long)(num_cities-1)/2;
+  unsigned int iterations = (counter/(threadsPerBlock*gridSize)) + 1;
+
   // Execute kernel
-  find_route<<<gridSize, threadsPerBlock>>>(d_route, num_cities);
+  find_route<<<gridSize, threadsPerBlock>>>(d_route, num_cities, d_coords, threadsPerBlock, iterations);
   
   // Sync Device
   HANDLE_ERROR(cudaDeviceSynchronize());

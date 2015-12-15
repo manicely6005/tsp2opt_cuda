@@ -29,6 +29,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <vector>
+#include "algorithms.h"
 
 struct best_2opt {
 	 unsigned int i;
@@ -36,7 +37,7 @@ struct best_2opt {
 	 int minchange;
  };
 
- __global__ void find_route(int *route, int N);
+ __global__ void find_route(int *route, int N, city_coords *coords, unsigned long long counter, unsigned int iterations);
 
  __device__ best_2opt best;
 
@@ -54,9 +55,6 @@ struct best_2opt {
   * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
  __host__ void getParam(struct best_2opt * out);
 
-
-// __device__ void swap_two(int idx, int i, int j, int *route, int *matrix, int N);
-// 
 // __device__ void euc2d(int idx, int *matrix, int num_cities, float *crap, int *distance);
 // __device__ void ceil2d(int idx, int *matrix, int num_cities, float *crap, int *distance);
 // __device__ void geo(int idx, int *matrix, int num_cities, float *crap, int *distance);

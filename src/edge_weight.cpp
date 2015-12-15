@@ -60,7 +60,7 @@ int edge_weight::euc2d(int *route, int num_cities, struct city_coords *coords)
     
     distance += floor(sqrt(xd + yd) + 0.5);
   }
-  return distance;
+  return (distance);
 }
 
 int edge_weight::ceil2d(int *route, int num_cities, struct city_coords *coords)
@@ -81,7 +81,7 @@ int edge_weight::ceil2d(int *route, int num_cities, struct city_coords *coords)
     
     distance += ceil(sqrt(xd + yd));
   }
-  return distance;
+  return (distance);
 }
 
 int edge_weight::geo(int *route, int num_cities, struct city_coords *coords)
@@ -126,7 +126,7 @@ int edge_weight::geo(int *route, int num_cities, struct city_coords *coords)
     
     distance += (int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0);
   }
-  return distance;
+  return (distance);
 }
 
 int edge_weight::att(int *route, int num_cities, struct city_coords *coords)
@@ -158,5 +158,5 @@ int edge_weight::att(int *route, int num_cities, struct city_coords *coords)
     }
     distance += dij;
   }
-  return distance;
+  return (distance);
 }

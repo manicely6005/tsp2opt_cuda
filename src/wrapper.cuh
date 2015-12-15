@@ -26,8 +26,10 @@
  *
  ******************************************************************************/
 
+#include "algorithms.h"
+
 const int threadsPerBlock = 16;
 
 int getGPU_Info(void);
 
-void cuda_function(int *route, int distance, int N);
+void cuda_function(int *route, int distance, int N, city_coords *coords);

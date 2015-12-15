@@ -196,7 +196,7 @@ void tsp::two_opt()
     improve = false;
 //    jump = false;
     
-    cuda_function(route, distance, num_cities);
+    cuda_function(route, distance, num_cities, coords);
 
 //    for (int i=1; i<num_cities-1; i++) {
 //

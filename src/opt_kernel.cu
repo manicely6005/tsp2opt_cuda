@@ -35,21 +35,89 @@
 
 #define WIDTH 3
 
-__global__ void find_route(int *route, int num_cities) {
+__global__ void find_route(int *route, int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations) {
 
-   __shared__ int cache[1024];
+   __shared__ city_coords cache[1024];
+   __shared__ int cities;
+   __shared__ best_2opt best_values[1024];
 
-   int idx = threadIdx.x + blockIdx.x * blockDim.x;
+   register int idx = threadIdx.x + blockIdx.x * blockDim.x;
+   register int id;
+   register unsigned int i, j;
+   register unsigned long long max = counter;
+   register int packSize = blockDim.x * gridDim.x;
+   register unsigned int iter = iterations;
+   register int change;
+   register int minChange = 999999;
 
-   if (idx < 8) {
-	   route[idx] = route[idx] + 1;
+   cities = num_cities;
+
+   for (register int i=threadIdx.x; i<cities; i+= blockDim.x) {
+	   cache[i] = coords[route[i]];
    }
 
+   __syncthreads();
+
+   // Each thread performs iter inner iterations in order to reuse the shared memory
+   /* The following technique was taken from "Accelerating 2-opt and 3-opt Local Search
+    * Using GPU in the Travelling Salesman Problem" by Kamil Rocki
+    */
+
+   for (register int no = 0; no < iter; no++) {
+	   id = idx + no * packSize;
+
+	   if (id < max) {
+		   // Indexing Lower Triangular Matrix
+		   i = (unsigned int)(3 +__fsqrt_rn(8.0f * (float) id + 1.0f))/2;
+		   j = id - (i-2) * (i-1) / 2 + 1;
+
+		   // Calculate change
+//		   change =
+
+		   // Save if local thread change is better then previous iteration best
+//		   if (change < minChange) {
+//			 best_value[threadIdx.x].minchange = change;
+//			 best_value[threadIdx.x].i = i;
+//			 best_value[threadIdx.x].j = j;
+//		   }
+	   }
+   }
+
+   __syncthreads();
+
+   // Intra-block reduction
+   // Reductions, threadsPerBlock must be a power of 2 because of the following code
+//     register int k = blockDim.x/2;
+//     while (k != 0) {
+//       if (threadIdx.x < i) {
+//         if (best_values[threadIdx.x + k].minchange < best_values[threadIdx.x].minchange) {
+//			 	best_values[threadIdx.x].minchange = best_values[threadIdx.x + k].minchange;
+//   			best_values[threadIdx.x].i = best_values[threadIdx.x + k].i;
+//   			best_values[threadIdx.x].j = best_values[threadIdx.x + k].j;
+//         }
+//       }
+//       __syncthreads();
+//       i /= 2;
+//     }
+
+   __syncthreads();
+
+   // Inter-block reduction. This will be a serial process of all blocks... Might be faster to reduce number of blocks...
    if (idx == 0) {
+
+//	   if (best_values[threadIdx.x].minchange < best.minchange) {
+//		   // Atomic function
+//		   atomicMin(&(best.minchange), best_values[threadIdx.x].minchange)
+//	   }
 
 	   printf("best = %d, %d, %d\n", best.i, best.j, best.minchange);\
 	   best.i = best.i + 5;
 	   best.minchange  = 1000;
+
+	   for (int i=0; i<cities; i++) {
+		   printf("cache[i].x = %f\n", cache[i].x);
+	       printf("cache[i].y = %f\n", cache[i].y);
+	   }
    }
 }
 
@@ -71,25 +139,6 @@ __host__ void getParam(struct best_2opt * out) {
 	cudaMemcpyFromSymbol(out, best, sizeof(struct best_2opt));
 }
 
-// __device__ void swap_two(int idx, int i, int j, int *route, int *matrix, int num_cities) {
-//   int count = 0;
-//   
-//   for (int c=0; c<i; c++) {
-//     matrix[idx*(num_cities+1)+count] = route[c];
-//     count++;
-//   }
-//   
-//   for (int c=j; c>i-1; c--) {
-//     matrix[idx*(num_cities+1)+count] = route[c];
-//     count++;
-//   }
-//   
-//   for (int c=j+1; c<num_cities+1; c++) {
-//     matrix[idx*(num_cities+1)+count] = route[c];
-//     count++;
-//   }
-// }
-// 
 // __device__ void geo(int idx, int *matrix, int num_cities, float *crap, int *distance) {
 //   
 //   int deg, j;
@@ -132,34 +181,5 @@ __host__ void getParam(struct best_2opt * out) {
 //     q3 = cos(latitude_i + latitude_j);
 //     
 //     *distance += (int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0);
-//   }
-// }
-// 
-// __device__ void att(int idx, int *matrix, int num_cities, float *crap, int *distance) {
-//   int dij, tij, j, xi, xj, yi, yj, xd, yd;
-//   float rij;
-//   
-//   for (int i=0; i<num_cities; i++) {
-//     j = i + 1;
-//     
-//     // matrix[i] - 1 convert the 1 based matrix to the 0 based crap
-//     xi = crap[(matrix[idx*(num_cities+1)+i] - 1)*WIDTH+1];    // x coordinate
-//     yi = crap[(matrix[idx*(num_cities+1)+i] - 1)*WIDTH+2];    // y coordinate
-//     xj = crap[(matrix[idx*(num_cities+1)+j] - 1)*WIDTH+1];    // x coordinate
-//     yj = crap[(matrix[idx*(num_cities+1)+j] - 1)*WIDTH+2];    // y coordinate
-//     
-//     xd = pow(double(xi - xj), 2.0);
-//     yd = pow(double(yi - yj), 2.0);
-//     
-//     rij = sqrt((xd + yd) / 10.0);
-//     
-//     tij = round(rij);
-//     
-//     if (tij < rij) {
-//       dij = tij + 1;
-//     } else {
-//       dij = tij;
-//     }
-//     *distance += dij;
 //   }
 // }
