@@ -180,7 +180,6 @@ int tsp::read_file(int argc, char *argv[])
 
 void tsp::two_opt()
 {
-//  int *temp;
   int distance; //, new_distance, temp_distance;
   
   // Calculate initial route
@@ -200,44 +199,13 @@ void tsp::two_opt()
   
   while(improve) {
     improve = false;
-//    jump = false;
     
     cuda_function(route, distance, num_cities, orderCoords);
 
-//    for (int i=1; i<num_cities-1; i++) {
-//
-//      if(jump) break;
-//      temp_distance = distance;
-//
-//      for (int j=i+1; j<num_cities; j++) {
-//
-//	swap_two(i, j);
-//	// 	print(new_route);
-//
-//	// Calculate new distance
-//	new_distance = (obj.*pFun)(new_route, num_cities, coords);
-//	// 	printf("Distance = %d\n", new_distance);
-//	if (new_distance < temp_distance) {
-//	  // 	  printf("New distance = %d\n", new_distance);
-//	  temp_distance = new_distance;
-//
-//	  temp = temp_route;
-//	  temp_route = new_route;
-//	  new_route = temp;
-//
-//	  improve = true;
-//	  jump = true;
-//	  update = true;
-//	}
-//      }
-//      if (update) {
-//	distance = temp_distance;
-//	temp = route;
-//	route = temp_route;
-//	temp_route = temp;
-//	update = false;
-//      }
-//    }
+    // Check if new route distance is better than last best distance
+    // bestLength = new route distance
+    // best route = route distance
+    // improve = true
   }
   
   //  printf("Optimized Route\n");

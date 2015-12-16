@@ -35,11 +35,11 @@
 
 #define WIDTH 3
 
-__global__ void find_route(int *route, int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations) {
+__global__ void find_route(int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations) {
 
-   __shared__ city_coords cache[1024];
+   __shared__ city_coords cache[MAX_CITIES];
    __shared__ int cities;
-   __shared__ best_2opt best_values[1024];
+   __shared__ best_2opt best_values[threadsPerBlock];
 
    register int idx = threadIdx.x + blockIdx.x * blockDim.x;
    register int id;
@@ -53,7 +53,7 @@ __global__ void find_route(int *route, int num_cities,  city_coords *coords, uns
    cities = num_cities;
 
    for (register int i=threadIdx.x; i<cities; i+= blockDim.x) {
-	   cache[i] = coords[route[i]];
+	   cache[i] = coords[i];
    }
 
    __syncthreads();
@@ -115,7 +115,7 @@ __global__ void find_route(int *route, int num_cities,  city_coords *coords, uns
 	   best.minchange  = 1000;
 
 	   for (int i=0; i<cities; i++) {
-		   printf("cache[i].x = %f\n", cache[i].x);
+		   printf("cache[i].x = %f ", cache[i].x);
 	       printf("cache[i].y = %f\n", cache[i].y);
 	   }
    }

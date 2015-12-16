@@ -37,7 +37,7 @@ struct best_2opt {
 	 int minchange;
  };
 
- __global__ void find_route(int *route, int N, city_coords *coords, unsigned long long counter, unsigned int iterations);
+ __global__ void find_route(int N, city_coords *coords, unsigned long long counter, unsigned int iterations);
 
  __device__ best_2opt best;
 
