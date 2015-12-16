@@ -35,11 +35,11 @@
 
 #define WIDTH 3
 
-__global__ void find_route(int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations) {
+__global__ void find_route(int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations, best_2opt *best_block) {
 
    __shared__ city_coords cache[MAX_CITIES];
    __shared__ int cities;
-   __shared__ best_2opt best_values[threadsPerBlock];
+   __shared__ best_2opt best_thread[threadsPerBlock];
 
    register int idx = threadIdx.x + blockIdx.x * blockDim.x;
    register int id;
@@ -55,12 +55,11 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
    for (register int i=threadIdx.x; i<cities; i+= blockDim.x) {
 	   cache[i] = coords[i];
    }
-
    __syncthreads();
 
    // Each thread performs iter inner iterations in order to reuse the shared memory
    /* The following technique was taken from "Accelerating 2-opt and 3-opt Local Search
-    * Using GPU in the Travelling Salesman Problem" by Kamil Rocki
+    * Using GPU in the Traveling Salesman Problem" by Kamil Rocki
     */
 
    for (register int no = 0; no < iter; no++) {
@@ -68,18 +67,18 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
 
 	   if (id < max) {
 		   // Indexing Lower Triangular Matrix
-		   i = (unsigned int)(3 +__fsqrt_rn(8.0f * (float) id + 1.0f))/2;
+		   i = (unsigned int) (3 + sqrt((float) 8.0 * (float) id + (float) 1.0))/2;
 		   j = id - (i-2) * (i-1) / 2 + 1;
 
 		   // Calculate change
-//		   change =
+		   change = geo(i, j, cache) + geo(i-1, j-1, cache) - geo(i-1, i, cache) - geo(j-1, j, cache);
 
 		   // Save if local thread change is better then previous iteration best
-//		   if (change < minChange) {
-//			 best_value[threadIdx.x].minchange = change;
-//			 best_value[threadIdx.x].i = i;
-//			 best_value[threadIdx.x].j = j;
-//		   }
+		   if (change < minChange) {
+			   best_thread[threadIdx.x].minchange = change;
+			   best_thread[threadIdx.x].i = i;
+			   best_thread[threadIdx.x].j = j;
+		   }
 	   }
    }
 
@@ -87,38 +86,49 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
 
    // Intra-block reduction
    // Reductions, threadsPerBlock must be a power of 2 because of the following code
-//     register int k = blockDim.x/2;
-//     while (k != 0) {
-//       if (threadIdx.x < i) {
-//         if (best_values[threadIdx.x + k].minchange < best_values[threadIdx.x].minchange) {
-//			 	best_values[threadIdx.x].minchange = best_values[threadIdx.x + k].minchange;
-//   			best_values[threadIdx.x].i = best_values[threadIdx.x + k].i;
-//   			best_values[threadIdx.x].j = best_values[threadIdx.x + k].j;
-//         }
-//       }
-//       __syncthreads();
-//       i /= 2;
-//     }
+   register int k = blockDim.x/2;
+   while (k != 0) {
+	   if (threadIdx.x < k) {
+		   if (best_thread[threadIdx.x + k].minchange < best_thread[threadIdx.x].minchange) {
+			   best_thread[threadIdx.x] = best_thread[threadIdx.x + k];
+		   }
+	   }
+	   __syncthreads();
+	   k /= 2;
+   }
 
    __syncthreads();
 
-   // Inter-block reduction. This will be a serial process of all blocks... Might be faster to reduce number of blocks...
-   if (idx == 0) {
+//   printf("blockIdx.x = %d: threadIdx.x = %d\n", blockIdx.x , idx);
 
-//	   if (best_values[threadIdx.x].minchange < best.minchange) {
-//		   // Atomic function
-//		   atomicMin(&(best.minchange), best_values[threadIdx.x].minchange)
-//	   }
-
-	   printf("best = %d, %d, %d\n", best.i, best.j, best.minchange);\
-	   best.i = best.i + 5;
-	   best.minchange  = 1000;
-
-	   for (int i=0; i<cities; i++) {
-		   printf("cache[i].x = %f ", cache[i].x);
-	       printf("cache[i].y = %f\n", cache[i].y);
-	   }
+   // Inter-block reduction.
+   if (threadIdx.x == 0) {
+	   best_block[blockIdx.x] = best_thread[threadIdx.x];
+//	   printf("best_block1 = %d, %d, %d\n", best_block[blockIdx.x].i, best_block[blockIdx.x].j, best_block[blockIdx.x].minchange);
    }
+
+//   k = gridDim.x/2;
+//   while (k != 0) {
+//	   if (blockIdx.x < k) {
+//		   if (best_block[blockIdx.x + k].minchange < best_block[blockIdx.x].minchange) {
+//			   best_block[blockIdx.x] = best_block[blockIdx.x + k];
+//		   }
+//	   }
+//	   __syncthreads();
+//	   k /= 2;
+//   }
+
+
+
+   // This will be a serial process of all blocks... Might be faster to reduce number of blocks...
+   if (idx < 80) {
+	   printf("i = %d & j = %d for idx: %d --- change = %d\n", i, j, idx, change);
+//	   printf("best = %d, %d, %d\n", best_thread[0].i, best_thread[0].j, best_thread[0].minchange);
+   }
+
+//   if (idx < 7) {
+//	   printf("best_block = %d, %d, %d\n", best_block[idx].i, best_block[idx].j, best_block[idx].minchange);
+//   }
 }
 
 /* This is a wrapper function which allows the wrapper file to copy to a symbol
@@ -139,47 +149,40 @@ __host__ void getParam(struct best_2opt * out) {
 	cudaMemcpyFromSymbol(out, best, sizeof(struct best_2opt));
 }
 
-// __device__ void geo(int idx, int *matrix, int num_cities, float *crap, int *distance) {
-//   
-//   int deg, j;
-//   double xi, yi, xj, yj;
-//   double PI = 3.141492;
-//   double min, latitude_i, latitude_j, longitude_i, longitude_j, RRR, q1, q2, q3;
-//   
-//   for (int i=0; i<num_cities; i++) {
-//     j = i + 1;
-//     
-//     // matrix[i] - 1 convert the 1 based matrix to the 0 based crap
-//     xi = crap[(matrix[idx*(num_cities+1)+i] - 1)*WIDTH+1];    // x coordinate
-//     yi = crap[(matrix[idx*(num_cities+1)+i] - 1)*WIDTH+2];    // y coordinate
-//     xj = crap[(matrix[idx*(num_cities+1)+j] - 1)*WIDTH+1];    // x coordinate
-//     yj = crap[(matrix[idx*(num_cities+1)+j] - 1)*WIDTH+2];    // y coordinate
-//     
-//     //     printf("xi = %f : yi = %f : xj = %f : yj = %f\n", xi, yi, xj, yj);
-//     
-//     deg = (int) xi;
-//     min = xi - deg;
-//     latitude_i = PI * (deg + 5.0 * min/3.0)                                                                 / 180.0;
-//     
-//     deg = (int) yi;
-//     min = yi - deg;
-//     longitude_i = PI * (deg + 5.0 * min/3.0) / 180.0;
-//     
-//     deg = (int) xj;
-//     min = xj - deg;
-//     latitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
-//     
-//     deg = (int) yj;
-//     min = yj - deg;
-//     longitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
-//     
-//     // The distance between two different nodes i and j in kilometers is then computed as follows:
-//     RRR = 6378.388;
-//     
-//     q1 = cos(longitude_i - longitude_j);
-//     q2 = cos(latitude_i - latitude_j);
-//     q3 = cos(latitude_i + latitude_j);
-//     
-//     *distance += (int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0);
-//   }
-// }
+ __device__ int geo(int i, int j, city_coords *coords) {
+   int deg;
+   float xi, yi, xj, yj;
+   double PI = 3.141492;
+   double min, latitude_i, latitude_j, longitude_i, longitude_j, RRR, q1, q2, q3;
+
+     // matrix[i] - 1 convert the 1 based matrix to the 0 based crap
+     xi = coords[i].x;
+     yi = coords[i].y;
+     xj = coords[j].x;
+     yj = coords[j].y;
+
+     deg = (int) xi;
+     min = xi - deg;
+     latitude_i = PI * (deg + 5.0 * min/3.0)                                                                 / 180.0;
+
+     deg = (int) yi;
+     min = yi - deg;
+     longitude_i = PI * (deg + 5.0 * min/3.0) / 180.0;
+
+     deg = (int) xj;
+     min = xj - deg;
+     latitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
+
+     deg = (int) yj;
+     min = yj - deg;
+     longitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
+
+     // The distance between two different nodes i and j in kilometers is then computed as follows:
+     RRR = 6378.388;
+
+     q1 = cos(longitude_i - longitude_j);
+     q2 = cos(latitude_i - latitude_j);
+     q3 = cos(latitude_i + latitude_j);
+
+     return (int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0);
+ }

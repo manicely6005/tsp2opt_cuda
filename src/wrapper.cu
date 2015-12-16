@@ -93,32 +93,23 @@ void cuda_function(int *route, int distance, int num_cities, city_coords *coords
   int blockSize;      // The launch  returned block size
   int gridSize;       // The actual grid size needed
   
-  struct best_2opt zero;
-  struct best_2opt out;
+  struct best_2opt zero = {0,0,0};
+  struct best_2opt out = {0,0,0};
+  struct best_2opt *block = new struct best_2opt [maxBlockDim];
 
   printf("num_cities = %d\n", num_cities);
 
-  for (int i=0; i<num_cities; i++) {
-	   printf("coords[i].x = %f ", coords[i].x);
-      printf("coords[i].y = %f\n", coords[i].y);
-  }
-  printf("\n");
-
-  zero.i = 1;
-  zero.j = 2;
-  zero.minchange = 500;
-
   // Create variables for GPU
-//  int *d_route;
   city_coords *d_coords;
+  best_2opt *d_block;
 
   // Allocate memory on GPU
-//  HANDLE_ERROR(cudaMalloc((void**)&d_route, (num_cities+1) * sizeof(int)));
   HANDLE_ERROR(cudaMalloc((void**)&d_coords, num_cities * sizeof(d_coords)));
+  HANDLE_ERROR(cudaMalloc((void**)&d_block, maxBlockDim * sizeof(d_block)));
   
   // Copy from CPU to GPU
-//  HANDLE_ERROR(cudaMemcpy(d_route, route, (num_cities+1) * sizeof(int), cudaMemcpyHostToDevice));
   HANDLE_ERROR(cudaMemcpy(d_coords, coords, num_cities * sizeof(d_coords), cudaMemcpyHostToDevice));
+  HANDLE_ERROR(cudaMemcpy(d_block, block, maxBlockDim * sizeof(d_block), cudaMemcpyHostToDevice));
 
   /* This is a wrapper function which allows the wrapper file to copy to a symbol
    * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
@@ -138,14 +129,17 @@ void cuda_function(int *route, int distance, int num_cities, city_coords *coords
   unsigned long long counter = (long)(num_cities-2)*(long)(num_cities-1)/2;
   unsigned int iterations = (counter/(threadsPerBlock*gridSize)) + 1;
 
+  printf("counter = %u\n", counter);
+  printf("iterations = %d\n", iterations);
+
   // Execute kernel
-  find_route<<<gridSize, threadsPerBlock>>>(num_cities, d_coords, threadsPerBlock, iterations);
+  find_route<<<gridSize, threadsPerBlock>>>(num_cities, d_coords, counter, iterations, d_block);
   
   // Sync Device
   HANDLE_ERROR(cudaDeviceSynchronize());
   
   // Copy from GPU to CPU
-//  HANDLE_ERROR(cudaMemcpy(route, d_route, (num_cities+1) * sizeof(int), cudaMemcpyDeviceToHost));
+  HANDLE_ERROR(cudaMemcpy(block, d_block, maxBlockDim * sizeof(d_block), cudaMemcpyDeviceToHost));
 
   /* This is a wrapper function which allows the wrapper file to copy to a symbol
    * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
@@ -154,6 +148,11 @@ void cuda_function(int *route, int distance, int num_cities, city_coords *coords
    * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
   // Copy struct best_2opt to out from GPU
   getParam(&out);
+
+  printf("Size of = %u\n", sizeof(*block));
+  for (int i=0; i<maxBlockDim; i++) {
+	  printf("block = %d, %d, %d\n", block[i].i, block[i].j, block[i].minchange);
+  }
 
   // Perform 2_opt swap and get new route
   // Must double check
@@ -179,5 +178,6 @@ void cuda_function(int *route, int distance, int num_cities, city_coords *coords
   }
   printf("\n\n");
 
+  delete(block);
   cudaDeviceReset();
 }

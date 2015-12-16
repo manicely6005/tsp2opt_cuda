@@ -199,7 +199,7 @@ void tsp::two_opt()
   
   while(improve) {
     improve = false;
-    
+    printf("Sizeof = %lu\n", sizeof(inputCoords));
     cuda_function(route, distance, num_cities, orderCoords);
 
     // Check if new route distance is better than last best distance
