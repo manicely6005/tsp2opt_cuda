@@ -9,8 +9,8 @@ CXX_PATH = g++
 SRCDIR		:= src
 OBJDIR		:= obj
 
-CPPFLAGS	:= -O3 -m64 -fPIC -Wall -Wextra -std=c++11
-NVCCFLAGS  	:= -O3 -m64 -std=c++11 -w --use_fast_math -res-usage -Xptxas -v
+CPPFLAGS	:= -O0 -g -m64 -fPIC -Wall -Wextra -std=c++11
+NVCCFLAGS  	:= -O0 -G -g -m64 -std=c++11 -arch=sm_52 -w --use_fast_math -res-usage -lineinfo -Xptxas -v
 CUDA_LINK_FLAGS := -lcuda -lcudart 
 
 OBJECTS :=\

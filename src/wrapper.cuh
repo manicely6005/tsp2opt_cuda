@@ -28,8 +28,7 @@
 
 #include "algorithms.h"
 
-const int threadsPerBlock = 16;
-const int maxBlockDim = 16;		// This will hold the best values for each block. Highly unlikely 128 will ever be reached.
+const int threadsPerBlock = 2;
 
 int getGPU_Info(void);
 

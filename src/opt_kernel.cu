@@ -37,152 +37,115 @@
 
 __global__ void find_route(int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations, best_2opt *best_block) {
 
-   __shared__ city_coords cache[MAX_CITIES];
-   __shared__ int cities;
-   __shared__ best_2opt best_thread[threadsPerBlock];
+  __shared__ city_coords cache[MAX_CITIES];
+  __shared__ int cities;
+  __shared__ best_2opt best_thread[threadsPerBlock];
 
-   register int idx = threadIdx.x + blockIdx.x * blockDim.x;
-   register int id;
-   register unsigned int i, j;
-   register unsigned long long max = counter;
-   register int packSize = blockDim.x * gridDim.x;
-   register unsigned int iter = iterations;
-   register int change;
-   register int minChange = 999999;
+  register int idx = threadIdx.x + blockIdx.x * blockDim.x;
+  register int id;
+  register unsigned int i, j;
+  register unsigned long long max = counter;
+  register int packSize = blockDim.x * gridDim.x;
+  register unsigned int iter = iterations;
+  register int change;
+  struct best_2opt best;
+  best.minchange = 999999;
 
-   cities = num_cities;
+  cities = num_cities;
 
-   for (register int i=threadIdx.x; i<cities; i+= blockDim.x) {
-	   cache[i] = coords[i];
-   }
-   __syncthreads();
+  for (register int i=threadIdx.x; i<cities; i+= blockDim.x) {
+      cache[i] = coords[i];
+  }
+  __syncthreads();
 
-   // Each thread performs iter inner iterations in order to reuse the shared memory
-   /* The following technique was taken from "Accelerating 2-opt and 3-opt Local Search
-    * Using GPU in the Traveling Salesman Problem" by Kamil Rocki
-    */
+  // Each thread performs iter inner iterations in order to reuse the shared memory
+  /* The following technique was taken from "Accelerating 2-opt and 3-opt Local Search
+   * Using GPU in the Traveling Salesman Problem" by Kamil Rocki
+   */
 
-   for (register int no = 0; no < iter; no++) {
-	   id = idx + no * packSize;
+  for (register int no = 0; no < iter; no++) {
+      id = idx + no * packSize;
 
-	   if (id < max) {
-		   // Indexing Lower Triangular Matrix
-		   i = (unsigned int) (3 + sqrt((float) 8.0 * (float) id + (float) 1.0))/2;
-		   j = id - (i-2) * (i-1) / 2 + 1;
+      if (id < max) {
+	  // Indexing Lower Triangular Matrix
+	  i = (unsigned int) (3 + sqrt((float) 8.0 * (float) id + (float) 1.0))/2;
+	  j = id - (i-2) * (i-1) / 2 + 1;
 
-		   // Calculate change
-		   change = geo(i, j, cache) + geo(i-1, j-1, cache) - geo(i-1, i, cache) - geo(j-1, j, cache);
+	  // Calculate change
+	  change = geo(i, j, cache) + geo(i-1, j-1, cache) - geo(i-1, i, cache) - geo(j-1, j, cache);
 
-		   // Save if local thread change is better then previous iteration best
-		   if (change < minChange) {
-			   best_thread[threadIdx.x].minchange = change;
-			   best_thread[threadIdx.x].i = i;
-			   best_thread[threadIdx.x].j = j;
-		   }
-	   }
-   }
+	  // Save if local thread change is better then previous iteration best
+	  if (change < best.minchange) {
 
-   __syncthreads();
+	      best.minchange = change;
+	      best.i = i;
+	      best.j = j;
+	      best_thread[threadIdx.x] = best;
+	  }
+      }
+  }
 
-   // Intra-block reduction
-   // Reductions, threadsPerBlock must be a power of 2 because of the following code
-   register int k = blockDim.x/2;
-   while (k != 0) {
-	   if (threadIdx.x < k) {
-		   if (best_thread[threadIdx.x + k].minchange < best_thread[threadIdx.x].minchange) {
-			   best_thread[threadIdx.x] = best_thread[threadIdx.x + k];
-		   }
-	   }
-	   __syncthreads();
-	   k /= 2;
-   }
+  __syncthreads();
 
-   __syncthreads();
+  // Intra-block reduction
+  // Reductions, threadsPerBlock must be a power of 2 because of the following code
+  register int k = blockDim.x/2;
+  while (k != 0) {
+      if (threadIdx.x < k) {
+	  if (best_thread[threadIdx.x + k].minchange < best_thread[threadIdx.x].minchange) {
+	      best_thread[threadIdx.x] = best_thread[threadIdx.x + k];
+	  }
+      }
+      __syncthreads();
+      k /= 2;
+  }
 
-//   printf("blockIdx.x = %d: threadIdx.x = %d\n", blockIdx.x , idx);
+  // Copying best match from each block to global memory. Reduction will be performed on CPU
+  if (threadIdx.x == 0) {
+      best_block[blockIdx.x] = best_thread[threadIdx.x];
+      printf("best_block = %d, %d, %d @ block %d\n", best_block[blockIdx.x].i, best_block[blockIdx.x].j, best_block[blockIdx.x].minchange, blockIdx.x);
 
-   // Inter-block reduction.
-   if (threadIdx.x == 0) {
-	   best_block[blockIdx.x] = best_thread[threadIdx.x];
-//	   printf("best_block1 = %d, %d, %d\n", best_block[blockIdx.x].i, best_block[blockIdx.x].j, best_block[blockIdx.x].minchange);
-   }
+  }
 
-//   k = gridDim.x/2;
-//   while (k != 0) {
-//	   if (blockIdx.x < k) {
-//		   if (best_block[blockIdx.x + k].minchange < best_block[blockIdx.x].minchange) {
-//			   best_block[blockIdx.x] = best_block[blockIdx.x + k];
-//		   }
-//	   }
-//	   __syncthreads();
-//	   k /= 2;
-//   }
-
-
-
-   // This will be a serial process of all blocks... Might be faster to reduce number of blocks...
-   if (idx < 80) {
-	   printf("i = %d & j = %d for idx: %d --- change = %d\n", i, j, idx, change);
-//	   printf("best = %d, %d, %d\n", best_thread[0].i, best_thread[0].j, best_thread[0].minchange);
-   }
-
-//   if (idx < 7) {
-//	   printf("best_block = %d, %d, %d\n", best_block[idx].i, best_block[idx].j, best_block[idx].minchange);
-//   }
+//  if (idx == 0) {
+//      printf("best_block1 = %d, %d, %d\n", best_block[idx].i, best_block[idx].j, best_block[idx].minchange);
+//  }
 }
 
-/* This is a wrapper function which allows the wrapper file to copy to a symbol
- * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
- * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
- * where you want to use it. Link to more info below.
- * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
-__host__ void setParam(struct best_2opt zero) {
-	cudaMemcpyToSymbol(best, &zero, sizeof(struct best_2opt));
+__device__ int geo(int i, int j, city_coords *coords) {
+  int deg;
+  float xi, yi, xj, yj;
+  double PI = 3.141492;
+  double min, latitude_i, latitude_j, longitude_i, longitude_j, RRR, q1, q2, q3;
+
+  // matrix[i] - 1 convert the 1 based matrix to the 0 based crap
+  xi = coords[i].x;
+  yi = coords[i].y;
+  xj = coords[j].x;
+  yj = coords[j].y;
+
+  deg = (int) xi;
+  min = xi - deg;
+  latitude_i = PI * (deg + 5.0 * min/3.0)                                                                 / 180.0;
+
+  deg = (int) yi;
+  min = yi - deg;
+  longitude_i = PI * (deg + 5.0 * min/3.0) / 180.0;
+
+  deg = (int) xj;
+  min = xj - deg;
+  latitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
+
+  deg = (int) yj;
+  min = yj - deg;
+  longitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
+
+  // The distance between two different nodes i and j in kilometers is then computed as follows:
+  RRR = 6378.388;
+
+  q1 = cos(longitude_i - longitude_j);
+  q2 = cos(latitude_i - latitude_j);
+  q3 = cos(latitude_i + latitude_j);
+
+  return (int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0);
 }
-
-/* This is a wrapper function which allows the wrapper file to copy to a symbol
- * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
- * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
- * where you want to use it. Link to more info below.
- * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
-__host__ void getParam(struct best_2opt * out) {
-	cudaMemcpyFromSymbol(out, best, sizeof(struct best_2opt));
-}
-
- __device__ int geo(int i, int j, city_coords *coords) {
-   int deg;
-   float xi, yi, xj, yj;
-   double PI = 3.141492;
-   double min, latitude_i, latitude_j, longitude_i, longitude_j, RRR, q1, q2, q3;
-
-     // matrix[i] - 1 convert the 1 based matrix to the 0 based crap
-     xi = coords[i].x;
-     yi = coords[i].y;
-     xj = coords[j].x;
-     yj = coords[j].y;
-
-     deg = (int) xi;
-     min = xi - deg;
-     latitude_i = PI * (deg + 5.0 * min/3.0)                                                                 / 180.0;
-
-     deg = (int) yi;
-     min = yi - deg;
-     longitude_i = PI * (deg + 5.0 * min/3.0) / 180.0;
-
-     deg = (int) xj;
-     min = xj - deg;
-     latitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
-
-     deg = (int) yj;
-     min = yj - deg;
-     longitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
-
-     // The distance between two different nodes i and j in kilometers is then computed as follows:
-     RRR = 6378.388;
-
-     q1 = cos(longitude_i - longitude_j);
-     q2 = cos(latitude_i - latitude_j);
-     q3 = cos(latitude_i + latitude_j);
-
-     return (int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0);
- }

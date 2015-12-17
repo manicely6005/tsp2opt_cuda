@@ -41,20 +41,6 @@ struct best_2opt {
 
  __device__ best_2opt best;
 
- /* This is a wrapper function which allows the wrapper file to copy to a symbol
-  * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
-  * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
-  * where you want to use it. Link to more info below.
-  * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
- __host__ void setParam(struct best_2opt zero);
-
- /* This is a wrapper function which allows the wrapper file to copy to a symbol
-  * This is because cudaMemcpyToSymbol is implicit local scope linkage. Meaning
-  * cudaMemcpyToSymbol must be in the same generated .obj file of the kernel
-  * where you want to use it. Link to more info below.
-  * http://stackoverflow.com/questions/16997611/cuda-writing-to-constant-memory-wrong-value */
- __host__ void getParam(struct best_2opt * out);
-
 // __device__ void euc2d(int idx, int *matrix, int num_cities, float *crap, int *distance);
 // __device__ void ceil2d(int idx, int *matrix, int num_cities, float *crap, int *distance);
  __device__ int geo(int i, int j, city_coords *coords);
