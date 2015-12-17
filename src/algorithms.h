@@ -43,9 +43,15 @@ struct city_coords{
   float y;
 };
 
+struct best_2opt {
+  unsigned int i;
+  unsigned int j;
+  int minchange;
+};
+
 class tsp
 {
-	
+
 public:
   tsp(int argc, char *argv[]); // Constructor, takes filename to read from as input
   tsp(tsp & source);
@@ -57,13 +63,14 @@ public:
   void init_route(); // Calculate initial route
   void print(int *arr);
   void creatOrderCoord(int *arr);
-	
+
 private:
   const std::string pStr[4] = {"EUC_2D", "GEO", "ATT", "CEIL_2D"};
   int num_cities; // Stores the number of cities read into original_list
   std::vector<float> coord;
-  city_coords *inputCoords;
-  city_coords *orderCoords;
+  struct city_coords *inputCoords;
+  struct city_coords *orderCoords;
+  struct best_2opt *gpuResult;
   int *route;
   int *new_route;
   int *temp_route;

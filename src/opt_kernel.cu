@@ -48,8 +48,7 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   register int packSize = blockDim.x * gridDim.x;
   register unsigned int iter = iterations;
   register int change;
-  struct best_2opt best;
-  best.minchange = 999999;
+  register struct best_2opt best = {0,0,999999};
 
   cities = num_cities;
 
@@ -59,10 +58,11 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   __syncthreads();
 
   // Each thread performs iter inner iterations in order to reuse the shared memory
-  /* The following technique was taken from "Accelerating 2-opt and 3-opt Local Search
+  /* The following for loop technique was taken from "Accelerating 2-opt and 3-opt Local Search
    * Using GPU in the Traveling Salesman Problem" by Kamil Rocki
    */
 
+#pragma unroll
   for (register int no = 0; no < iter; no++) {
       id = idx + no * packSize;
 
@@ -72,11 +72,10 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
 	  j = id - (i-2) * (i-1) / 2 + 1;
 
 	  // Calculate change
-	  change = geo(i, j, cache) + geo(i-1, j-1, cache) - geo(i-1, i, cache) - geo(j-1, j, cache);
+	  change = euc2d(i, j, cache) + euc2d(i-1, j-1, cache) - euc2d(i-1, i, cache) - euc2d(j-1, j, cache);
 
 	  // Save if local thread change is better then previous iteration best
 	  if (change < best.minchange) {
-
 	      best.minchange = change;
 	      best.i = i;
 	      best.j = j;
@@ -86,6 +85,8 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   }
 
   __syncthreads();
+
+
 
   // Intra-block reduction
   // Reductions, threadsPerBlock must be a power of 2 because of the following code
@@ -103,16 +104,13 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   // Copying best match from each block to global memory. Reduction will be performed on CPU
   if (threadIdx.x == 0) {
       best_block[blockIdx.x] = best_thread[threadIdx.x];
-      printf("best_block = %d, %d, %d @ block %d\n", best_block[blockIdx.x].i, best_block[blockIdx.x].j, best_block[blockIdx.x].minchange, blockIdx.x);
-
+//      printf("best_block = %d, %d, %d @ block %d\n", best_block[blockIdx.x].i, best_block[blockIdx.x].j, best_block[blockIdx.x].minchange, blockIdx.x);
   }
 
-//  if (idx == 0) {
-//      printf("best_block1 = %d, %d, %d\n", best_block[idx].i, best_block[idx].j, best_block[idx].minchange);
-//  }
+//  if (idx < 10) printf("idx: %d; id: %d; i: %d; j: %d\n", idx, id, i, j);
 }
 
-__device__ int geo(int i, int j, city_coords *coords) {
+__device__ int geo(int i, int j, struct city_coords *coords) {
   int deg;
   float xi, yi, xj, yj;
   double PI = 3.141492;
@@ -148,4 +146,21 @@ __device__ int geo(int i, int j, city_coords *coords) {
   q3 = cos(latitude_i + latitude_j);
 
   return (int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0);
+}
+
+__device__ int euc2d(int i, int j, struct city_coords *coords) {
+  int distance = 0;
+  float xi, yi, xj, yj, xd, yd;
+
+
+    // route[i] - 1 convert the 1 based arr to the 0 based coord
+    xi = coords[i].x;
+    yi = coords[i].y;
+    xj = coords[j].x;
+    yj = coords[j].y;
+
+    xd = pow((xi - xj), 2.0);
+    yd = pow((yi - yj), 2.0);
+
+    return (int) floor(sqrt(xd + yd) + 0.5);
 }

@@ -31,17 +31,17 @@
 #include <vector>
 #include "algorithms.h"
 
-struct best_2opt {
-	 unsigned int i;
-	 unsigned int j;
-	 int minchange;
- };
+//struct best_2opt {
+//	 unsigned int i;
+//	 unsigned int j;
+//	 int minchange;
+// };
 
  __global__ void find_route(int N, city_coords *coords, unsigned long long counter, unsigned int iterations, best_2opt *best_block);
 
  __device__ best_2opt best;
 
-// __device__ void euc2d(int idx, int *matrix, int num_cities, float *crap, int *distance);
+__device__ int euc2d(int i, int j, struct city_coords *coords);
 // __device__ void ceil2d(int idx, int *matrix, int num_cities, float *crap, int *distance);
- __device__ int geo(int i, int j, city_coords *coords);
+ __device__ int geo(int i, int j, struct city_coords *coords);
 // __device__ void att(int idx, int *matrix, int num_cities, float *crap, int *distance);

@@ -52,6 +52,7 @@ tsp::tsp(int argc, char * argv[])
 {
   inputCoords = new struct city_coords [MAX_CITIES*2];
   orderCoords = new struct city_coords [MAX_CITIES*2];
+  gpuResult = new struct best_2opt;
 
   num_cities = read_file(argc, argv);
   route = new int [num_cities+1];
@@ -81,6 +82,7 @@ tsp::~tsp()
 {
   delete(inputCoords);
   delete(orderCoords);
+  delete(gpuResult);
   delete(route);
   delete(new_route);
   delete(temp_route);
@@ -100,7 +102,7 @@ int tsp::read_file(int argc, char *argv[])
 	  //      printf("Enter inputfile\n");
 	  //      std::cin >> input;
 	  //      filename = input.c_str();
-	  filename = ("TSPLIB/burma14.tsp");
+	  filename = ("TSPLIB/rl1889.tsp");
       } else {
 	  printf("usage: tsp_2opt <input file (*.tsp)>");
 	  exit(1);
@@ -164,9 +166,7 @@ int tsp::read_file(int argc, char *argv[])
   // copy coordinates to structure 
   for (int i=0; i<tsp_info.dim; i++) {
       inputCoords[i].x = coord[i*3+1];
-      //     printf("coords[i].x = %f\n", coords[i].x);
       inputCoords[i].y = coord[i*3+2];
-      //     printf("coords[i].y = %f\n", coords[i].y);
   }
 
   printf("Name = %s\n", tsp_info.name.c_str());
@@ -180,10 +180,14 @@ int tsp::read_file(int argc, char *argv[])
 
 void tsp::two_opt()
 {
-  int distance; //, new_distance, temp_distance;
+  int *temp;
+  int distance, new_distance;//, temp_distance;
+
+//  int apple = 3474 int *temp;
 
   // Calculate initial route
   init_route();
+//  print(route);
 
   // Create ordered coordinates
   creatOrderCoord(route);
@@ -195,14 +199,44 @@ void tsp::two_opt()
   distance = (obj.*pFun)(num_cities, orderCoords);
   printf("Initial distance = %d\n\n", distance);
 
+//  printf("gpuResult = %d, %d, %d\n", gpuResult->i, gpuResult->j, gpuResult->minchange);
+
   bool improve = true;
 
   while(improve) {
       improve = false;
-      printf("Sizeof = %lu\n", sizeof(inputCoords));
-      cuda_function(route, distance, num_cities, orderCoords);
+
+      cuda_function(distance, num_cities, orderCoords, gpuResult);
+
+//      printf("gpuResult = %d, %d, %d\n", gpuResult->i, gpuResult->j, gpuResult->minchange);
+
+      // Create new route with GPU swap result
+      if (gpuResult->i < gpuResult->j) {
+	  swap_two(gpuResult->i-1, gpuResult->j);
+      } else {
+	  swap_two(gpuResult->j, gpuResult->i-1);
+      }
+
+      // Create ordered coordinates from new route
+      creatOrderCoord(new_route);
+
+//      print(new_route);
+
+      // Calculate new distance
+      new_distance = (obj.*pFun)(num_cities, orderCoords);
+
+//      printf("Old distance = %d\n", distance);
+//      printf("New distance = %d\n", new_distance);
 
       // Check if new route distance is better than last best distance
+      if (new_distance < distance) {
+	  distance = new_distance;
+	  temp = route;
+	  route = new_route;
+	  new_route = temp;
+
+	  improve = true;
+      }
       // bestLength = new route distance
       // best route = route distance
       // improve = true
@@ -210,7 +244,7 @@ void tsp::two_opt()
 
   //  printf("Optimized Route\n");
   //  print(route);
-  printf("Optimized Distance = %d\n", distance);
+  printf("Optimized Distance = %d\n", new_distance);
 }
 
 void tsp::swap_two(const int& i, const int& j)
@@ -248,7 +282,7 @@ void tsp::print(int *arr)
   for (int i=0; i<num_cities+1; i++) {
       printf("%d ", arr[i]);
   }
-  printf("\n");
+  printf("\n\n");
 }
 
 void tsp::creatOrderCoord(int *arr) {
