@@ -1,0 +1,106 @@
+Running 2 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 1]->[City 0]
+tour cost = 97
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 1.7057e-05s
+
+Running 3 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 1]->[City 0]
+tour cost = 75
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 1.8833e-05s
+
+Running 4 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 1]->[City 3]->[City 0]
+tour cost = 173
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 1.6716e-05s
+
+Running 5 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 1]->[City 3]->[City 4]->[City 0]
+tour cost = 194
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 2.1906e-05s
+
+Running 6 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 5]->[City 3]->[City 4]->[City 1]->[City 0]
+tour cost = 168
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 2.4554e-05s
+
+Running 7 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 6]->[City 3]->[City 4]->[City 2]->[City 5]->[City 1]->[City 0]
+tour cost = 133
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 4.0344e-05s
+
+Running 8 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 3]->[City 1]->[City 7]->[City 6]->[City 5]->[City 4]->[City 0]
+tour cost = 165
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 0.000135107s
+
+Running 9 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 6]->[City 5]->[City 1]->[City 3]->[City 4]->[City 8]->[City 7]->[City 0]
+tour cost = 197
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 0.000974625s
+
+Running 10 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 4]->[City 3]->[City 5]->[City 6]->[City 1]->[City 8]->[City 7]->[City 9]->[City 0]
+tour cost = 130
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 0.0093211s
+
+Running 11 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 7]->[City 1]->[City 5]->[City 6]->[City 3]->[City 10]->[City 8]->[City 9]->[City 4]->[City 0]
+tour cost = 163
+finished computation at Tue Oct  6 15:23:22 2015
+elapsed time: 0.101989s
+
+Running 12 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 3]->[City 9]->[City 10]->[City 1]->[City 11]->[City 4]->[City 7]->[City 2]->[City 8]->[City 6]->[City 5]->[City 0]
+tour cost = 134
+finished computation at Tue Oct  6 15:23:23 2015
+elapsed time: 1.19647s
+
+Running 13 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 7]->[City 11]->[City 9]->[City 3]->[City 4]->[City 1]->[City 10]->[City 5]->[City 12]->[City 6]->[City 8]->[City 0]
+tour cost = 126
+finished computation at Tue Oct  6 15:23:39 2015
+elapsed time: 15.1634s
+
+Running 14 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 13]->[City 4]->[City 3]->[City 11]->[City 5]->[City 7]->[City 9]->[City 8]->[City 6]->[City 1]->[City 10]->[City 12]->[City 0]
+tour cost = 172
+finished computation at Tue Oct  6 15:27:14 2015
+elapsed time: 214.972s
+
+Running 15 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 12]->[City 3]->[City 9]->[City 7]->[City 14]->[City 11]->[City 4]->[City 5]->[City 1]->[City 8]->[City 6]->[City 13]->[City 10]->[City 0]
+tour cost = 135
+finished computation at Tue Oct  6 16:20:24 2015
+elapsed time: 3190.18s
+
+Running 16 nodes with -03 optimization
+Best City Tour:
+[City 0]->[City 2]->[City 9]->[City 10]->[City 8]->[City 5]->[City 15]->[City 14]->[City 4]->[City 12]->[City 13]->[City 1]->[City 7]->[City 3]->[City 11]->[City 6]->[City 0]
+tour cost = 132
+finished computation at Wed Oct  7 06:49:27 2015
+elapsed time: 52142.8s
+
+Running 17 nodes with -03 optimization
