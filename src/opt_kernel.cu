@@ -104,10 +104,7 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   // Copying best match from each block to global memory. Reduction will be performed on CPU
   if (threadIdx.x == 0) {
       best_block[blockIdx.x] = best_thread[threadIdx.x];
-//      printf("best_block = %d, %d, %d @ block %d\n", best_block[blockIdx.x].i, best_block[blockIdx.x].j, best_block[blockIdx.x].minchange, blockIdx.x);
   }
-
-//  if (idx < 10) printf("idx: %d; id: %d; i: %d; j: %d\n", idx, id, i, j);
 }
 
 __device__ int geo(int i, int j, struct city_coords *coords) {
@@ -153,14 +150,14 @@ __device__ int euc2d(int i, int j, struct city_coords *coords) {
   float xi, yi, xj, yj, xd, yd;
 
 
-    // route[i] - 1 convert the 1 based arr to the 0 based coord
-    xi = coords[i].x;
-    yi = coords[i].y;
-    xj = coords[j].x;
-    yj = coords[j].y;
+  // route[i] - 1 convert the 1 based arr to the 0 based coord
+  xi = coords[i].x;
+  yi = coords[i].y;
+  xj = coords[j].x;
+  yj = coords[j].y;
 
-    xd = pow((xi - xj), 2.0);
-    yd = pow((yi - yj), 2.0);
+  xd = pow((xi - xj), 2.0);
+  yd = pow((yi - yj), 2.0);
 
-    return (int) floor(sqrt(xd + yd) + 0.5);
+  return (int) floor(sqrt(xd + yd) + 0.5);
 }

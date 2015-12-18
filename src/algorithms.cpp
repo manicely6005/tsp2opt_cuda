@@ -36,6 +36,8 @@
 #include <sstream>
 #include <iterator>
 #include <algorithm>
+#include <chrono>
+#include <ctime>
 #include "algorithms.h"
 #include "edge_weight.h"
 #include "wrapper.cuh"
@@ -99,10 +101,9 @@ int tsp::read_file(int argc, char *argv[])
       filename = argv[1];
   } else {
       if (argc==1) {
-	  //      printf("Enter inputfile\n");
-	  //      std::cin >> input;
-	  //      filename = input.c_str();
-	  filename = ("TSPLIB/rl1889.tsp");
+	  printf("Enter inputfile ('TSPLIB/{$FILENAME})'\n");
+	  std::cin >> input;
+	  filename = input.c_str();
       } else {
 	  printf("usage: tsp_2opt <input file (*.tsp)>");
 	  exit(1);
@@ -163,7 +164,7 @@ int tsp::read_file(int argc, char *argv[])
   // close file
   inputFile.close();
 
-  // copy coordinates to structure 
+  // copy coordinates to structure
   for (int i=0; i<tsp_info.dim; i++) {
       inputCoords[i].x = coord[i*3+1];
       inputCoords[i].y = coord[i*3+2];
@@ -181,13 +182,14 @@ int tsp::read_file(int argc, char *argv[])
 void tsp::two_opt()
 {
   int *temp;
-  int distance, new_distance;//, temp_distance;
+  int distance, new_distance;
 
-//  int apple = 3474 int *temp;
+  // Start timer
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  start = std::chrono::system_clock::now();
 
   // Calculate initial route
   init_route();
-//  print(route);
 
   // Create ordered coordinates
   creatOrderCoord(route);
@@ -199,16 +201,12 @@ void tsp::two_opt()
   distance = (obj.*pFun)(num_cities, orderCoords);
   printf("Initial distance = %d\n\n", distance);
 
-//  printf("gpuResult = %d, %d, %d\n", gpuResult->i, gpuResult->j, gpuResult->minchange);
-
   bool improve = true;
 
   while(improve) {
       improve = false;
 
       cuda_function(distance, num_cities, orderCoords, gpuResult);
-
-//      printf("gpuResult = %d, %d, %d\n", gpuResult->i, gpuResult->j, gpuResult->minchange);
 
       // Create new route with GPU swap result
       if (gpuResult->i < gpuResult->j) {
@@ -220,13 +218,8 @@ void tsp::two_opt()
       // Create ordered coordinates from new route
       creatOrderCoord(new_route);
 
-//      print(new_route);
-
       // Calculate new distance
       new_distance = (obj.*pFun)(num_cities, orderCoords);
-
-//      printf("Old distance = %d\n", distance);
-//      printf("New distance = %d\n", new_distance);
 
       // Check if new route distance is better than last best distance
       if (new_distance < distance) {
@@ -237,14 +230,19 @@ void tsp::two_opt()
 
 	  improve = true;
       }
-      // bestLength = new route distance
-      // best route = route distance
-      // improve = true
   }
 
-  //  printf("Optimized Route\n");
-  //  print(route);
+  end = std::chrono::system_clock::now();
+
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+
   printf("Optimized Distance = %d\n", new_distance);
+
+  std::cout << "finished computation at " << std::ctime(&end_time)
+  << "elapsed time: " << elapsed_seconds.count() << "s\n\n";
+
+  resetGPU();
 }
 
 void tsp::swap_two(const int& i, const int& j)
@@ -269,8 +267,6 @@ void tsp::swap_two(const int& i, const int& j)
 
 void tsp::init_route()
 {
-  //  printf("Initial route\n");
-  //  int temp[] = {1, 8, 9, 19, 7, 6, 20, 18, 21, 16, 13, 12, 24, 15, 14, 22, 5, 25, 10, 11, 4, 2, 3, 23, 17};
   for (int i=0; i<num_cities; i++) {
       route[i] = i+1;
   }

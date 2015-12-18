@@ -107,12 +107,9 @@ void cuda_function(int distance, int num_cities, city_coords *h_coords, best_2op
   struct best_2opt *h_block;
   h_block = new struct best_2opt[gridSize * 3];
 
-//  printf("blockSize = %d\n", threadsPerBlock);
-//  printf("gridSize = %d\n\n", gridSize);
-
   // Allocate memory on GPU
-  HANDLE_ERROR(cudaMalloc((void**)&d_coords, num_cities * sizeof(struct city_coords)));
-  HANDLE_ERROR(cudaMalloc((void**)&d_block, gridSize * sizeof(struct best_2opt)));
+  HANDLE_ERROR(cudaMallocHost((void**)&d_coords, num_cities * sizeof(struct city_coords)));
+  HANDLE_ERROR(cudaMallocHost((void**)&d_block, gridSize * sizeof(struct best_2opt)));
 
   // Copy from CPU to GPU
   HANDLE_ERROR(cudaMemcpy(d_coords, h_coords, num_cities * sizeof(struct city_coords), cudaMemcpyHostToDevice));
@@ -121,9 +118,6 @@ void cuda_function(int distance, int num_cities, city_coords *h_coords, best_2op
   //to calculate the number of jobs/2-opt changes and iteration number for each thread
   unsigned long long counter = (long)(num_cities-2)*(long)(num_cities-1)/2;
   unsigned int iterations = (counter/(threadsPerBlock*gridSize)) + 1;
-
-//  printf("counter = %u\n", counter);
-//  printf("iterations = %d\n\n", iterations);
 
   // Execute kernel
   find_route<<<gridSize, threadsPerBlock>>>(num_cities, d_coords, counter, iterations, d_block);
@@ -142,23 +136,10 @@ void cuda_function(int distance, int num_cities, city_coords *h_coords, best_2op
   // Copy best to structure used by two_opt()
   memcpy((void*)gpuResult, (void*)&h_block[0], sizeof(struct best_2opt));
 
-  // Perform 2_opt swap and get new route
-  // Must double check
-  //  if (out.i > out.j) {
-  //	  // Do something
-  //	  // swap(i, j) MAYBE
-  //  }
-
-  // Calculate new distance from new route
-
-
-  // Check if distance is less than old best distance
-
-
-
-  // Continue while best_change is less than 0
-  // WHY
-
+  // Delete allocate memory
   delete(h_block);
+}
+
+void resetGPU() {
   cudaDeviceReset();
 }
