@@ -49,6 +49,7 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   register unsigned int iter = iterations;
   register int change;
   register struct best_2opt best = {0,0,999999};
+//  register int cities = num_cities;
 
   cities = num_cities;
 
@@ -83,10 +84,7 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
 	  }
       }
   }
-
   __syncthreads();
-
-
 
   // Intra-block reduction
   // Reductions, threadsPerBlock must be a power of 2 because of the following code
@@ -108,10 +106,10 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
 }
 
 __device__ int geo(int i, int j, struct city_coords *coords) {
-  int deg;
-  float xi, yi, xj, yj;
-  double PI = 3.141492;
-  double min, latitude_i, latitude_j, longitude_i, longitude_j, RRR, q1, q2, q3;
+  register int deg;
+  register float xi, yi, xj, yj;
+  register double PI = 3.141492;
+  register double min, latitude_i, latitude_j, longitude_i, longitude_j, RRR, q1, q2, q3;
 
   // matrix[i] - 1 convert the 1 based matrix to the 0 based crap
   xi = coords[i].x;
@@ -146,9 +144,8 @@ __device__ int geo(int i, int j, struct city_coords *coords) {
 }
 
 __device__ int euc2d(int i, int j, struct city_coords *coords) {
-  int distance = 0;
-  float xi, yi, xj, yj, xd, yd;
-
+  register int distance = 0;
+  register float xi, yi, xj, yj, xd, yd;
 
   // route[i] - 1 convert the 1 based arr to the 0 based coord
   xi = coords[i].x;
@@ -156,8 +153,8 @@ __device__ int euc2d(int i, int j, struct city_coords *coords) {
   xj = coords[j].x;
   yj = coords[j].y;
 
-  xd = pow((xi - xj), 2.0);
-  yd = pow((yi - yj), 2.0);
+  xd = (xi - xj) * (xi - xj);
+  yd = (yi - yj) * (yi - yj);
 
   return (int) floor(sqrt(xd + yd) + 0.5);
 }
