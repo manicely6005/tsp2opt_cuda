@@ -119,7 +119,7 @@ __device__ int geo(int i, int j, struct city_coords *coords) {
 
   deg = (int) xi;
   min = xi - deg;
-  latitude_i = PI * (deg + 5.0 * min/3.0)                                                                 / 180.0;
+  latitude_i = PI * (deg + 5.0 * min/3.0) / 180.0;
 
   deg = (int) yi;
   min = yi - deg;

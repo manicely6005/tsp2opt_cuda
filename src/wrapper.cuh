@@ -32,6 +32,6 @@ const int threadsPerBlock = 1024;
 
 int getGPU_Info(void);
 
-void cuda_function(int distance, int N, city_coords *coords, best_2opt *gpuResult);
+void cuda_function(int N, city_coords *coords, best_2opt *gpuResult);
 
 void resetGPU();

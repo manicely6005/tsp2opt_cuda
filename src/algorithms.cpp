@@ -47,6 +47,7 @@ struct tsp_info {
   std::string type;
   int dim;
   std::string e_weight;
+  int solution;
 } tsp_info;
 
 //Constructor that takes a character string corresponding to an external filename and reads in cities from that file
@@ -101,7 +102,7 @@ int tsp::read_file(int argc, char *argv[])
       filename = argv[1];
   } else {
       if (argc==1) {
-	  printf("Enter inputfile ('TSPLIB/{$FILENAME})'\n");
+	  printf("Enter inputfile ('TSPLIB/{$FILENAME}')\n");
 	  std::cin >> input;
 	  filename = input.c_str();
       } else {
@@ -109,6 +110,43 @@ int tsp::read_file(int argc, char *argv[])
 	  exit(1);
       }
   }
+
+  if  (!strcmp 		(filename,"TSPLIB/berlin52.tsp")) 	tsp_info.solution = 7542;
+  else if (!strcmp 	(filename,"TSPLIB/ch130.tsp")) 		tsp_info.solution = 6110;
+  else if (!strcmp 	(filename,"TSPLIB/pr439.tsp")) 		tsp_info.solution = 107217;
+  else if (!strcmp 	(filename,"TSPLIB/kroA100.tsp")) 	tsp_info.solution = 21282;
+  else if (!strcmp 	(filename,"TSPLIB/kroE100.tsp")) 	tsp_info.solution = 22068;
+  else if (!strcmp 	(filename,"TSPLIB/kroB100.tsp")) 	tsp_info.solution = 22141;
+  else if (!strcmp 	(filename,"TSPLIB/kroC100.tsp")) 	tsp_info.solution = 20749;
+  else if (!strcmp 	(filename,"TSPLIB/kroD100.tsp")) 	tsp_info.solution = 21294;
+  else if (!strcmp 	(filename,"TSPLIB/kroA150.tsp")) 	tsp_info.solution = 26524;
+  else if (!strcmp 	(filename,"TSPLIB/kroA200.tsp")) 	tsp_info.solution = 29368;
+  else if (!strcmp 	(filename,"TSPLIB/ch150.tsp")) 		tsp_info.solution = 6528;
+  else if (!strcmp 	(filename,"TSPLIB/rat195.tsp")) 	tsp_info.solution = 2323;
+  else if (!strcmp 	(filename,"TSPLIB/ts225.tsp")) 		tsp_info.solution = 126643;
+  else if (!strcmp 	(filename,"TSPLIB/pr226.tsp")) 		tsp_info.solution = 80369;
+  else if (!strcmp 	(filename,"TSPLIB/pr264.tsp")) 		tsp_info.solution = 49135;
+  else if (!strcmp 	(filename,"TSPLIB/pr299.tsp")) 		tsp_info.solution = 48191;
+  else if (!strcmp 	(filename,"TSPLIB/a280.tsp")) 		tsp_info.solution = 2579;
+  else if (!strcmp 	(filename,"TSPLIB/att532.tsp")) 	tsp_info.solution = 27686;
+  else if (!strcmp 	(filename,"TSPLIB/rat783.tsp")) 	tsp_info.solution = 8806;
+  else if (!strcmp 	(filename,"TSPLIB/pr1002.tsp")) 	tsp_info.solution = 259045;
+  else if (!strcmp 	(filename,"TSPLIB/vm1084.tsp")) 	tsp_info.solution = 239297;
+  else if (!strcmp 	(filename,"TSPLIB/pr2392.tsp")) 	tsp_info.solution = 378032;
+  else if (!strcmp 	(filename,"TSPLIB/fl3795.tsp")) 	tsp_info.solution = 28772;
+  else if (!strcmp 	(filename,"TSPLIB/pcb3038.tsp")) 	tsp_info.solution = 137694;
+  else if (!strcmp 	(filename,"TSPLIB/fnl4461.tsp")) 	tsp_info.solution = 182566;
+  else if (!strcmp 	(filename,"TSPLIB/rl5934.tsp")) 	tsp_info.solution = 556045;
+  else if (!strcmp 	(filename,"TSPLIB/pla7397.tsp")) 	tsp_info.solution = 23260728;
+  else if (!strcmp 	(filename,"TSPLIB/usa13509.tsp")) 	tsp_info.solution = 19982859;
+  else if (!strcmp 	(filename,"TSPLIB/d15112.tsp")) 	tsp_info.solution = 1573084;
+  else if (!strcmp 	(filename,"TSPLIB/usa15309.tsp")) 	tsp_info.solution = 19982859;
+  else if (!strcmp 	(filename,"TSPLIB/d18512.tsp")) 	tsp_info.solution = 645238;
+  else if (!strcmp 	(filename,"TSPLIB/sw24978.tsp")) 	tsp_info.solution = 855597;
+  else if (!strcmp 	(filename,"TSPLIB/pla33810.tsp")) 	tsp_info.solution = 66048945;
+  else if (!strcmp 	(filename,"TSPLIB/pla85900.tsp")) 	tsp_info.solution = 142382641;
+  else if (!strcmp 	(filename,"TSPLIB/mona-lisa100K.tsp"))	tsp_info.solution = 5757080;
+  else tsp_info.solution = 0;
 
   // open file
   std::ifstream inputFile(filename);
@@ -174,6 +212,7 @@ int tsp::read_file(int argc, char *argv[])
   printf("Type = %s\n", tsp_info.type.c_str());
   printf("Dimension = %d\n", tsp_info.dim);
   printf("Edge Weight = %s\n", tsp_info.e_weight.c_str());
+  printf("Solution = %d\n", tsp_info.solution);
   printf("\n");
 
   return tsp_info.dim;
@@ -183,6 +222,7 @@ void tsp::two_opt()
 {
   int *temp;
   int distance, new_distance;
+  bool improve = true;
 
   // Start timer
   std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -197,16 +237,19 @@ void tsp::two_opt()
   // Check GPU Info
   getGPU_Info();
 
+  printf("Optimal Distance = %d\n\n", tsp_info.solution);
+
   // Calculate initial route distance
   distance = (obj.*pFun)(num_cities, orderCoords);
   printf("Initial distance = %d\n\n", distance);
 
-  bool improve = true;
+  // Initialize random seed
+  srand(time(NULL));
 
   while(improve) {
       improve = false;
 
-      cuda_function(distance, num_cities, orderCoords, gpuResult);
+      cuda_function(num_cities, orderCoords, gpuResult);
 
       // Create new route with GPU swap result
       if (gpuResult->i < gpuResult->j) {
@@ -220,6 +263,7 @@ void tsp::two_opt()
 
       // Calculate new distance
       new_distance = (obj.*pFun)(num_cities, orderCoords);
+      //      printf("New_distance = %d\n\n", new_distance);
 
       // Check if new route distance is better than last best distance
       if (new_distance < distance) {
@@ -227,7 +271,28 @@ void tsp::two_opt()
 	  temp = route;
 	  route = new_route;
 	  new_route = temp;
+	  improve = true;
 
+	  // If new distance is not less than the old but greater than desired
+	  // This help find global minimum
+      } else if (new_distance > (tsp_info.solution*1.05)) {
+	  int ii = rand() % (num_cities - 1) + 1;	// Index range 1 to num_cities
+	  int jj = rand() % (num_cities - 1) + 1;	// Can't select first or last index
+	  if (ii < jj) {
+	      swap_two(ii, jj);
+	  } else {
+	      swap_two(jj, ii);
+	  }
+
+	  // Create ordered coordinates from new route
+	  creatOrderCoord(new_route);
+
+	  // Calculate initial route distance
+	  distance = (obj.*pFun)(num_cities, orderCoords);
+
+	  temp = route;
+	  route = new_route;
+	  new_route = temp;
 	  improve = true;
       }
   }
@@ -237,7 +302,9 @@ void tsp::two_opt()
   std::chrono::duration<double> elapsed_seconds = end-start;
   std::time_t end_time = std::chrono::system_clock::to_time_t(end);
 
-  printf("Optimized Distance = %d\n", new_distance);
+  printf("Optimized Distance = %d\n\n", new_distance);
+
+  printf("Optimal Distance = %d\n\n", tsp_info.solution);
 
   std::cout << "finished computation at " << std::ctime(&end_time)
   << "elapsed time: " << elapsed_seconds.count() << "s\n\n";
