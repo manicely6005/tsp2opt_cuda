@@ -140,7 +140,7 @@ __device__ int geo(int i, int j, struct city_coords *coords) {
   q2 = cos(latitude_i - latitude_j);
   q3 = cos(latitude_i + latitude_j);
 
-  return (int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0);
+  return ((int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0));
 }
 
 __device__ int euc2d(int i, int j, struct city_coords *coords) {
@@ -156,5 +156,5 @@ __device__ int euc2d(int i, int j, struct city_coords *coords) {
   xd = (xi - xj) * (xi - xj);
   yd = (yi - yj) * (yi - yj);
 
-  return (int) floor(sqrt(xd + yd) + 0.5);
+  return ((int) floor(sqrt(xd + yd) + 0.5));
 }

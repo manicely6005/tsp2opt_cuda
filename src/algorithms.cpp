@@ -239,7 +239,7 @@ void tsp::two_opt()
 
   printf("Optimal Distance = %d\n\n", tsp_info.solution);
 
-  for (int seed=0; seed<2; seed++) {
+  for (int seed=0; seed<seedCount; seed++) {
 
   improve = true;
   timeCap = false;		// If search time limit is exceeded, set flag
@@ -310,7 +310,7 @@ void tsp::two_opt()
 	  new_route = temp;
 
 	  // Follow code cause search to exit after 5 minutes
-	  middle = std::chrono::system_clock::now();
+	  middle = std::chrono::high_resolution_clock::now();
 	  elapsed_seconds = middle-start;
 
 	  if (elapsed_seconds.count() < timeLimit) {
@@ -324,7 +324,7 @@ void tsp::two_opt()
   }
 
   // Get seed runtime
-  end = std::chrono::system_clock::now();
+  end = std::chrono::high_resolution_clock::now();
   elapsed_seconds = end-start;
 
   write_file(new_distance, elapsed_seconds);
@@ -333,7 +333,8 @@ void tsp::two_opt()
   }
 
   // Get system time
-  std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+  std::chrono::system_clock::time_point endPoint = std::chrono::system_clock::now();
+  std::time_t end_time = std::chrono::system_clock::to_time_t(endPoint);
   printf("finished computation at %s\n",std::ctime(&end_time));
 
   // Reset GPU

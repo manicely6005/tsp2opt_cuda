@@ -40,6 +40,7 @@
 #define MAX_CITIES 4096
 
 const int timeLimit = 300;
+const int seedCount = 50;
 
 struct city_coords{
   float x;
