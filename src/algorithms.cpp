@@ -36,7 +36,6 @@
 #include <sstream>
 #include <iterator>
 #include <algorithm>
-#include <chrono>
 #include <ctime>
 #include "algorithms.h"
 #include "edge_weight.h"
@@ -49,6 +48,10 @@ struct tsp_info {
   std::string e_weight;
   int solution;
 } tsp_info;
+
+
+std::ofstream myfile;
+
 
 //Constructor that takes a character string corresponding to an external filename and reads in cities from that file
 tsp::tsp(int argc, char * argv[])
@@ -78,6 +81,23 @@ tsp::tsp(int argc, char * argv[])
       printf("Error calculating distance\n");
       exit(EXIT_FAILURE);
   }
+
+  // Create filename with timestamp
+  std::ostringstream oss;
+  time_t rawtime;
+  struct tm *timeinfo;
+  time(&rawtime);
+  timeinfo = localtime(&rawtime);
+  char buffer [80];
+  strftime(buffer, 80, "_%F_%H-%M-%S", timeinfo);
+  oss << "results/" << tsp_info.name << buffer << ".txt";
+
+  // Open output file
+  myfile.open(oss.str(), std::ofstream::out | std::ofstream::app);
+  if (!myfile.good()) {
+      printf("Couldn't open output file.");
+      exit(EXIT_FAILURE);
+  }
 }
 
 //Destructor clears the deques
@@ -89,6 +109,9 @@ tsp::~tsp()
   delete(route);
   delete(new_route);
   delete(temp_route);
+
+  // Close output file
+  myfile.close();
 }
 
 //Read city data from file into tsp's solution member, returns number of cities added
@@ -107,45 +130,29 @@ int tsp::read_file(int argc, char *argv[])
 	  filename = input.c_str();
       } else {
 	  printf("usage: tsp_2opt <input file (*.tsp)>");
-	  exit(1);
+	  exit(EXIT_FAILURE);
       }
   }
 
-  if  (!strcmp 		(filename,"TSPLIB/berlin52.tsp")) 	tsp_info.solution = 7542;
-  else if (!strcmp 	(filename,"TSPLIB/ch130.tsp")) 		tsp_info.solution = 6110;
-  else if (!strcmp 	(filename,"TSPLIB/pr439.tsp")) 		tsp_info.solution = 107217;
-  else if (!strcmp 	(filename,"TSPLIB/kroA100.tsp")) 	tsp_info.solution = 21282;
-  else if (!strcmp 	(filename,"TSPLIB/kroE100.tsp")) 	tsp_info.solution = 22068;
-  else if (!strcmp 	(filename,"TSPLIB/kroB100.tsp")) 	tsp_info.solution = 22141;
-  else if (!strcmp 	(filename,"TSPLIB/kroC100.tsp")) 	tsp_info.solution = 20749;
-  else if (!strcmp 	(filename,"TSPLIB/kroD100.tsp")) 	tsp_info.solution = 21294;
-  else if (!strcmp 	(filename,"TSPLIB/kroA150.tsp")) 	tsp_info.solution = 26524;
-  else if (!strcmp 	(filename,"TSPLIB/kroA200.tsp")) 	tsp_info.solution = 29368;
-  else if (!strcmp 	(filename,"TSPLIB/ch150.tsp")) 		tsp_info.solution = 6528;
-  else if (!strcmp 	(filename,"TSPLIB/rat195.tsp")) 	tsp_info.solution = 2323;
-  else if (!strcmp 	(filename,"TSPLIB/ts225.tsp")) 		tsp_info.solution = 126643;
-  else if (!strcmp 	(filename,"TSPLIB/pr226.tsp")) 		tsp_info.solution = 80369;
-  else if (!strcmp 	(filename,"TSPLIB/pr264.tsp")) 		tsp_info.solution = 49135;
-  else if (!strcmp 	(filename,"TSPLIB/pr299.tsp")) 		tsp_info.solution = 48191;
-  else if (!strcmp 	(filename,"TSPLIB/a280.tsp")) 		tsp_info.solution = 2579;
+  if  (!strcmp 		(filename,"TSPLIB/a280.tsp")) 		tsp_info.solution = 2579;
+  else if (!strcmp 	(filename,"TSPLIB/att48.tsp")) 		tsp_info.solution = 10628;
   else if (!strcmp 	(filename,"TSPLIB/att532.tsp")) 	tsp_info.solution = 27686;
-  else if (!strcmp 	(filename,"TSPLIB/rat783.tsp")) 	tsp_info.solution = 8806;
-  else if (!strcmp 	(filename,"TSPLIB/pr1002.tsp")) 	tsp_info.solution = 259045;
-  else if (!strcmp 	(filename,"TSPLIB/vm1084.tsp")) 	tsp_info.solution = 239297;
-  else if (!strcmp 	(filename,"TSPLIB/pr2392.tsp")) 	tsp_info.solution = 378032;
+  else if (!strcmp 	(filename,"TSPLIB/bier127.tsp")) 	tsp_info.solution = 118282;
+  else if (!strcmp 	(filename,"TSPLIB/burma14.tsp")) 	tsp_info.solution = 3323;
+  else if (!strcmp 	(filename,"TSPLIB/d15112.tsp")) 	tsp_info.solution = 1573084;
+  else if (!strcmp 	(filename,"TSPLIB/d1655.tsp")) 		tsp_info.solution = 62128;
+  else if (!strcmp 	(filename,"TSPLIB/d2103.tsp")) 		tsp_info.solution = 80450;
+  else if (!strcmp 	(filename,"TSPLIB/d493.tsp")) 		tsp_info.solution = 35002;
+  else if (!strcmp 	(filename,"TSPLIB/d657.tsp")) 		tsp_info.solution = 48912;
+  else if (!strcmp 	(filename,"TSPLIB/eil76.tsp")) 		tsp_info.solution = 538;
   else if (!strcmp 	(filename,"TSPLIB/fl3795.tsp")) 	tsp_info.solution = 28772;
   else if (!strcmp 	(filename,"TSPLIB/pcb3038.tsp")) 	tsp_info.solution = 137694;
-  else if (!strcmp 	(filename,"TSPLIB/fnl4461.tsp")) 	tsp_info.solution = 182566;
+  else if (!strcmp 	(filename,"TSPLIB/pr2392.tsp")) 	tsp_info.solution = 378032;
+  else if (!strcmp 	(filename,"TSPLIB/rd400.tsp")) 		tsp_info.solution = 15281;
+  else if (!strcmp 	(filename,"TSPLIB/rl11849.tsp")) 	tsp_info.solution = 923288;
+  else if (!strcmp 	(filename,"TSPLIB/rl1889.tsp")) 	tsp_info.solution = 316536;
   else if (!strcmp 	(filename,"TSPLIB/rl5934.tsp")) 	tsp_info.solution = 556045;
-  else if (!strcmp 	(filename,"TSPLIB/pla7397.tsp")) 	tsp_info.solution = 23260728;
-  else if (!strcmp 	(filename,"TSPLIB/usa13509.tsp")) 	tsp_info.solution = 19982859;
-  else if (!strcmp 	(filename,"TSPLIB/d15112.tsp")) 	tsp_info.solution = 1573084;
-  else if (!strcmp 	(filename,"TSPLIB/usa15309.tsp")) 	tsp_info.solution = 19982859;
-  else if (!strcmp 	(filename,"TSPLIB/d18512.tsp")) 	tsp_info.solution = 645238;
-  else if (!strcmp 	(filename,"TSPLIB/sw24978.tsp")) 	tsp_info.solution = 855597;
-  else if (!strcmp 	(filename,"TSPLIB/pla33810.tsp")) 	tsp_info.solution = 66048945;
-  else if (!strcmp 	(filename,"TSPLIB/pla85900.tsp")) 	tsp_info.solution = 142382641;
-  else if (!strcmp 	(filename,"TSPLIB/mona-lisa100K.tsp"))	tsp_info.solution = 5757080;
+  else if (!strcmp 	(filename,"TSPLIB/u2319.tsp")) 		tsp_info.solution = 234256;
   else tsp_info.solution = 0;
 
   // open file
@@ -222,11 +229,28 @@ void tsp::two_opt()
 {
   int *temp;
   int distance, new_distance;
-  bool improve = true;
+
+  // Initialize high resolution clock variables
+  std::chrono::time_point<std::chrono::high_resolution_clock> start, middle, end;
+  std::chrono::duration<double> elapsed_seconds;
+
+  // Check GPU Info
+  getGPU_Info();
+
+  printf("Optimal Distance = %d\n\n", tsp_info.solution);
+
+  for (int seed=0; seed<2; seed++) {
+
+  improve = true;
+  timeCap = false;		// If search time limit is exceeded, set flag
 
   // Start timer
-  std::chrono::time_point<std::chrono::system_clock> start, end;
-  start = std::chrono::system_clock::now();
+  start = std::chrono::high_resolution_clock::now();
+
+  // Initialize random seed
+  srand(seed);
+
+  printf("Starting seed %d\n", seed);
 
   // Calculate initial route
   init_route();
@@ -234,17 +258,9 @@ void tsp::two_opt()
   // Create ordered coordinates
   creatOrderCoord(route);
 
-  // Check GPU Info
-  getGPU_Info();
-
-  printf("Optimal Distance = %d\n\n", tsp_info.solution);
-
   // Calculate initial route distance
   distance = (obj.*pFun)(num_cities, orderCoords);
   printf("Initial distance = %d\n\n", distance);
-
-  // Initialize random seed
-  srand(time(NULL));
 
   while(improve) {
       improve = false;
@@ -263,7 +279,6 @@ void tsp::two_opt()
 
       // Calculate new distance
       new_distance = (obj.*pFun)(num_cities, orderCoords);
-      //      printf("New_distance = %d\n\n", new_distance);
 
       // Check if new route distance is better than last best distance
       if (new_distance < distance) {
@@ -293,22 +308,35 @@ void tsp::two_opt()
 	  temp = route;
 	  route = new_route;
 	  new_route = temp;
-	  improve = true;
+
+	  // Follow code cause search to exit after 5 minutes
+	  middle = std::chrono::system_clock::now();
+	  elapsed_seconds = middle-start;
+
+	  if (elapsed_seconds.count() < timeLimit) {
+	      improve = true;
+	  } else {
+	      printf("***Search has exceed time limit (%d seconds)\n", timeLimit);
+	      printf("***Exit search. Continuing to next seed.\n\n");
+	      timeCap = true;
+	  }
       }
   }
 
+  // Get seed runtime
   end = std::chrono::system_clock::now();
+  elapsed_seconds = end-start;
 
-  std::chrono::duration<double> elapsed_seconds = end-start;
+  write_file(new_distance, elapsed_seconds);
+  printf("Optimized Distance = %d: Seed %d\n\n", new_distance, seed);
+  printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
+  }
+
+  // Get system time
   std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+  printf("finished computation at %s\n",std::ctime(&end_time));
 
-  printf("Optimized Distance = %d\n\n", new_distance);
-
-  printf("Optimal Distance = %d\n\n", tsp_info.solution);
-
-  std::cout << "finished computation at " << std::ctime(&end_time)
-  << "elapsed time: " << elapsed_seconds.count() << "s\n\n";
-
+  // Reset GPU
   resetGPU();
 }
 
@@ -351,5 +379,13 @@ void tsp::print(int *arr)
 void tsp::creatOrderCoord(int *arr) {
   for (int i=0; i<num_cities+1; i++) {
       orderCoords[i] = inputCoords[arr[i]-1];
+  }
+}
+
+void tsp::write_file(int distance, std::chrono::duration<double> elapsed_seconds) {
+  if(timeCap) {
+      myfile << elapsed_seconds.count()<< ", " << "ERROR" << "\n";
+  } else {
+      myfile << elapsed_seconds.count()<< ", " << distance << "\n";
   }
 }

@@ -9,8 +9,16 @@ CXX_PATH = g++
 SRCDIR		:= src
 OBJDIR		:= obj
 
+ARCHS		:= -gencode arch=compute_20,code=sm_20 \
+				-gencode arch=compute_30,code=sm_30 \
+				-gencode arch=compute_32,code=sm_32 \
+				-gencode arch=compute_35,code=sm_35 \
+				-gencode arch=compute_50,code=sm_50 \
+				-gencode arch=compute_52,code=sm_52 \
+				-gencode arch=compute_53,code=sm_53
+				
 CPPFLAGS	:= -O3 -g -m64 -fPIC -Wall -Wextra -std=c++11
-NVCCFLAGS  	:= -O3 -G -g -m64 -std=c++11 -arch=sm_52 -w --use_fast_math -res-usage -lineinfo -Xptxas -v
+NVCCFLAGS  	:= -O3 -G -g -m64 -std=c++11 -w --use_fast_math -res-usage -lineinfo -Xptxas -v
 CUDA_LINK_FLAGS := -lcuda -lcudart 
 
 OBJECTS :=\
@@ -67,7 +75,7 @@ $(OBJDIR)/edge_weight.o: $(SRCDIR)/edge_weight.cpp $(SRCDIR)/edge_weight.h $(SRC
 	$(CXX_PATH) $(CPPFLAGS) -o $(OBJDIR)/edge_weight.o -c $(SRCDIR)/edge_weight.cpp
 	
 $(OBJDIR)/opt_kernel.o: $(SRCDIR)/opt_kernel.cu $(SRCDIR)/opt_kernel.cuh $(SRCDIR)/algorithms.h
-	$(NVCC_PATH) $(NVCCFLAGS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/opt_kernel.o -c $(SRCDIR)/opt_kernel.cu
+	$(NVCC_PATH) $(NVCCFLAGS) $(ARCHS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/opt_kernel.o -c $(SRCDIR)/opt_kernel.cu
 	
 $(OBJDIR)/wrapper.o: $(SRCDIR)/wrapper.cu $(SRCDIR)/wrapper.cuh $(SRCDIR)/opt_kernel.cuh
-	$(NVCC_PATH) $(NVCCFLAGS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/wrapper.o -c $(SRCDIR)/wrapper.cu
+	$(NVCC_PATH) $(NVCCFLAGS) $(ARCHS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/wrapper.o -c $(SRCDIR)/wrapper.cu

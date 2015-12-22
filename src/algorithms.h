@@ -31,12 +31,15 @@
 
 #include <vector>
 #include <string>
+#include <chrono>
 #include "edge_weight.h"
 
 //maximum number of cities that can be used in the simple GPU 2-opt algorithm
 //limited by the shared memory size
 //shared memory needed = MAX_CITIES * sizeof(city_coords)
 #define MAX_CITIES 4096
+
+const int timeLimit = 300;
 
 struct city_coords{
   float x;
@@ -48,6 +51,8 @@ struct best_2opt {
   unsigned int j;
   int minchange;
 };
+
+extern std::ofstream myfile;
 
 class tsp
 {
@@ -63,6 +68,7 @@ public:
   void init_route(); // Calculate initial route
   void print(int *arr);
   void creatOrderCoord(int *arr);
+  void write_file(int distance, std::chrono::duration<double> elapsed_seconds);
 
 private:
   const std::string pStr[4] = {"EUC_2D", "GEO", "ATT", "CEIL_2D"};
@@ -75,5 +81,8 @@ private:
   int *new_route;
   int *temp_route;
   int (edge_weight::*pFun) (int num_cities, struct city_coords *coords);  edge_weight obj;
+  bool improve;
+  bool timeCap;
+
 };
 #endif
