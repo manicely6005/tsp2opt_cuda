@@ -30,48 +30,38 @@
  ******************************************************************************/
 
 #include <iostream>
-#include <fstream>
 #include <sstream>
+#include <iterator>
+#include <cstring>
+#include <algorithm>
 #include "algorithms.h"
 #include "edge_weight.h"
 #include "wrapper.cuh"
 
-struct tsp_info {
-  std::string name;
-  std::string type;
-  int dim;
-  std::string e_weight;
-  int solution;
-} tsp_info;
-
+// Global
 std::ofstream myfile;
 
-//Constructor that takes a character string corresponding to an external filename and reads in cities from that file
+// Constructor that takes a character string corresponding to an external filename and reads in cities from that file
 tsp::tsp(int argc, char * argv[])
 {
   inputCoords = new struct city_coords [MAX_CITIES*2];
   orderCoords = new struct city_coords [MAX_CITIES*2];
   gpuResult = new struct best_2opt;
+  tsp_info = new struct tsp_info;
 
   num_cities = read_file(argc, argv);
   route = new int [num_cities+1];
   new_route = new int [num_cities+1];
   temp_route = new int [num_cities+1];
 
-  h_func = new func;
-
-  if (tsp_info.e_weight.c_str() == pStr[0]) {
+  if (tsp_info->e_weight.c_str() == pStr[0]) {
       pFun = &edge_weight::euc2d;
-
-  } else if (tsp_info.e_weight.c_str() == pStr[1]) {
+  } else if (tsp_info->e_weight.c_str() == pStr[1]) {
       pFun = &edge_weight::geo;
-
-  } else if (tsp_info.e_weight.c_str() == pStr[2]) {
+  } else if (tsp_info->e_weight.c_str() == pStr[2]) {
       pFun = &edge_weight::att;
-
-  } else if (tsp_info.e_weight.c_str() == pStr[3]) {
+  } else if (tsp_info->e_weight.c_str() == pStr[3]) {
       pFun = &edge_weight::ceil2d;
-
   } else {
       printf("Error calculating distance\n");
       exit(EXIT_FAILURE);
@@ -85,7 +75,7 @@ tsp::tsp(int argc, char * argv[])
   timeinfo = localtime(&rawtime);
   char buffer [80];
   strftime(buffer, 80, "_%F_%H-%M-%S", timeinfo);
-  oss << "results/" << tsp_info.name << buffer << ".txt";
+  oss << "results/" << tsp_info->name << buffer << ".txt";
 
   // Open output file
   myfile.open(oss.str(), std::ofstream::out | std::ofstream::app);
@@ -95,7 +85,7 @@ tsp::tsp(int argc, char * argv[])
   }
 }
 
-//Destructor clears the deques
+// Destructor clears the deques
 tsp::~tsp()
 {
   delete(inputCoords);
@@ -109,7 +99,7 @@ tsp::~tsp()
   myfile.close();
 }
 
-//Read city data from file into tsp's solution member, returns number of cities added
+// Read city data from file into tsp's solution member, returns number of cities added
 int tsp::read_file(int argc, char *argv[])
 {
   const char *filename;
@@ -129,26 +119,26 @@ int tsp::read_file(int argc, char *argv[])
       }
   }
 
-  if  (!strcmp 		(filename,"TSPLIB/a280.tsp")) 		tsp_info.solution = 2579;
-  else if (!strcmp 	(filename,"TSPLIB/att48.tsp")) 		tsp_info.solution = 10628;
-  else if (!strcmp 	(filename,"TSPLIB/att532.tsp")) 	tsp_info.solution = 27686;
-  else if (!strcmp 	(filename,"TSPLIB/bier127.tsp")) 	tsp_info.solution = 118282;
-  else if (!strcmp 	(filename,"TSPLIB/burma14.tsp")) 	tsp_info.solution = 3323;
-  else if (!strcmp 	(filename,"TSPLIB/d15112.tsp")) 	tsp_info.solution = 1573084;
-  else if (!strcmp 	(filename,"TSPLIB/d1655.tsp")) 		tsp_info.solution = 62128;
-  else if (!strcmp 	(filename,"TSPLIB/d2103.tsp")) 		tsp_info.solution = 80450;
-  else if (!strcmp 	(filename,"TSPLIB/d493.tsp")) 		tsp_info.solution = 35002;
-  else if (!strcmp 	(filename,"TSPLIB/d657.tsp")) 		tsp_info.solution = 48912;
-  else if (!strcmp 	(filename,"TSPLIB/eil76.tsp")) 		tsp_info.solution = 538;
-  else if (!strcmp 	(filename,"TSPLIB/fl3795.tsp")) 	tsp_info.solution = 28772;
-  else if (!strcmp 	(filename,"TSPLIB/pcb3038.tsp")) 	tsp_info.solution = 137694;
-  else if (!strcmp 	(filename,"TSPLIB/pr2392.tsp")) 	tsp_info.solution = 378032;
-  else if (!strcmp 	(filename,"TSPLIB/rd400.tsp")) 		tsp_info.solution = 15281;
-  else if (!strcmp 	(filename,"TSPLIB/rl11849.tsp")) 	tsp_info.solution = 923288;
-  else if (!strcmp 	(filename,"TSPLIB/rl1889.tsp")) 	tsp_info.solution = 316536;
-  else if (!strcmp 	(filename,"TSPLIB/rl5934.tsp")) 	tsp_info.solution = 556045;
-  else if (!strcmp 	(filename,"TSPLIB/u2319.tsp")) 		tsp_info.solution = 234256;
-  else tsp_info.solution = 0;
+  if  (!strcmp 		(filename,"TSPLIB/a280.tsp")) 		tsp_info->solution = 2579;
+  else if (!strcmp 	(filename,"TSPLIB/att48.tsp")) 		tsp_info->solution = 10628;
+  else if (!strcmp 	(filename,"TSPLIB/att532.tsp")) 	tsp_info->solution = 27686;
+  else if (!strcmp 	(filename,"TSPLIB/bier127.tsp")) 	tsp_info->solution = 118282;
+  else if (!strcmp 	(filename,"TSPLIB/burma14.tsp")) 	tsp_info->solution = 3323;
+  else if (!strcmp 	(filename,"TSPLIB/d15112.tsp")) 	tsp_info->solution = 1573084;
+  else if (!strcmp 	(filename,"TSPLIB/d1655.tsp")) 		tsp_info->solution = 62128;
+  else if (!strcmp 	(filename,"TSPLIB/d2103.tsp")) 		tsp_info->solution = 80450;
+  else if (!strcmp 	(filename,"TSPLIB/d493.tsp")) 		tsp_info->solution = 35002;
+  else if (!strcmp 	(filename,"TSPLIB/d657.tsp")) 		tsp_info->solution = 48912;
+  else if (!strcmp 	(filename,"TSPLIB/eil76.tsp")) 		tsp_info->solution = 538;
+  else if (!strcmp 	(filename,"TSPLIB/fl3795.tsp")) 	tsp_info->solution = 28772;
+  else if (!strcmp 	(filename,"TSPLIB/pcb3038.tsp")) 	tsp_info->solution = 137694;
+  else if (!strcmp 	(filename,"TSPLIB/pr2392.tsp")) 	tsp_info->solution = 378032;
+  else if (!strcmp 	(filename,"TSPLIB/rd400.tsp")) 		tsp_info->solution = 15281;
+  else if (!strcmp 	(filename,"TSPLIB/rl11849.tsp")) 	tsp_info->solution = 923288;
+  else if (!strcmp 	(filename,"TSPLIB/rl1889.tsp")) 	tsp_info->solution = 316536;
+  else if (!strcmp 	(filename,"TSPLIB/rl5934.tsp")) 	tsp_info->solution = 556045;
+  else if (!strcmp 	(filename,"TSPLIB/u2319.tsp")) 		tsp_info->solution = 234256;
+  else tsp_info->solution = 0;
 
   // open file
   std::ifstream inputFile(filename);
@@ -168,24 +158,24 @@ int tsp::read_file(int argc, char *argv[])
 	      std::getline(iss, result, ':');
 	      std::getline(iss, result, '\n');
 	      result.erase(remove_if(result.begin(), result.end(), isspace), result.end());
-	      tsp_info.name = result;
+	      tsp_info->name = result;
 
 	  }	else if (!line.find("TYPE")) {
 	      std::getline(iss, result, ':');
 	      std::getline(iss, result, '\n');
 	      result.erase(remove_if(result.begin(), result.end(), isspace), result.end());
-	      tsp_info.type = result;
+	      tsp_info->type = result;
 
 	  } else if (!line.find("DIMENSION")) {
 	      std::getline(iss, result, ':');
 	      std::getline(iss, result, '\n');
-	      tsp_info.dim = stoi(result);
+	      tsp_info->dim = stoi(result);
 
 	  } else if (!line.find("EDGE_WEIGHT_TYPE")) {
 	      std::getline(iss, result, ':');
 	      std::getline(iss, result, '\n');
 	      result.erase(remove_if(result.begin(), result.end(), isspace), result.end());
-	      tsp_info.e_weight = result;
+	      tsp_info->e_weight = result;
 
 	  }  else {
 	      std::istringstream in(line);
@@ -205,19 +195,19 @@ int tsp::read_file(int argc, char *argv[])
   inputFile.close();
 
   // copy coordinates to structure
-  for (int i=0; i<tsp_info.dim; i++) {
+  for (int i=0; i<tsp_info->dim; i++) {
       inputCoords[i].x = coord[i*3+1];
       inputCoords[i].y = coord[i*3+2];
   }
 
-  printf("Name = %s\n", tsp_info.name.c_str());
-  printf("Type = %s\n", tsp_info.type.c_str());
-  printf("Dimension = %d\n", tsp_info.dim);
-  printf("Edge Weight = %s\n", tsp_info.e_weight.c_str());
-  printf("Solution = %d\n", tsp_info.solution);
+  printf("Name = %s\n", tsp_info->name.c_str());
+  printf("Type = %s\n", tsp_info->type.c_str());
+  printf("Dimension = %d\n", tsp_info->dim);
+  printf("Edge Weight = %s\n", tsp_info->e_weight.c_str());
+  printf("Solution = %d\n", tsp_info->solution);
   printf("\n");
 
-  return tsp_info.dim;
+  return tsp_info->dim;
 }
 
 void tsp::two_opt()
@@ -232,12 +222,12 @@ void tsp::two_opt()
   // Check GPU Info
   getGPU_Info();
 
-  printf("Optimal Distance = %d\n\n", tsp_info.solution);
+  printf("Optimal Distance = %d\n\n", tsp_info->solution);
 
   for (int seed=19; seed<20; seed++) {
 
-  improve = true;
-  timeCap = false;		// If search time limit is exceeded, set flag
+  improve = true;	// Continue search 2-opt swaps
+  timeCap = false;	// If search time limit is exceeded, set flag
 
   // Start timer
   start = std::chrono::high_resolution_clock::now();
@@ -260,6 +250,7 @@ void tsp::two_opt()
   while(improve) {
       improve = false;
 
+      // Call cuda wrapper
       cuda_function(num_cities, orderCoords, gpuResult);
 
       // Create new route with GPU swap result
@@ -285,7 +276,7 @@ void tsp::two_opt()
 
 	  // If new distance is not less than the old but greater than desired
 	  // This help find global minimum
-      } else if (new_distance > (tsp_info.solution*1.05)) {
+      } else if (new_distance > (tsp_info->solution*1.05)) {
 	  int ii = rand() % (num_cities - 1) + 1;	// Index range 1 to num_cities
 	  int jj = rand() % (num_cities - 1) + 1;	// Can't select first or last index
 	  if (ii < jj) {

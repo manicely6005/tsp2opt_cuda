@@ -47,7 +47,6 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   register unsigned int iter = iterations;
   register int change;
   register struct best_2opt best = {0,0,999999};
-//  register int cities = num_cities;
 
   cities = num_cities;
 
@@ -142,7 +141,6 @@ __device__ int geo(int i, int j, struct city_coords *coords) {
 }
 
 __device__ int euc2d(int i, int j, struct city_coords *coords) {
-  register int distance = 0;
   register float xi, yi, xj, yj, xd, yd;
 
   // route[i] - 1 convert the 1 based arr to the 0 based coord
@@ -156,5 +154,3 @@ __device__ int euc2d(int i, int j, struct city_coords *coords) {
 
   return ((int) floor(sqrt(xd + yd) + 0.5));
 }
-
-__device__ func pfunc1 = euc2d;

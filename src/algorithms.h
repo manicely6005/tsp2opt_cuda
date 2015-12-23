@@ -32,6 +32,7 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <fstream>
 #include "edge_weight.h"
 
 //maximum number of cities that can be used in the simple GPU 2-opt algorithm
@@ -40,7 +41,7 @@
 #define MAX_CITIES 4096
 
 const int timeLimit = 300;
-const int seedCount = 50;
+const int seedCount = 1;
 
 struct city_coords{
   float x;
@@ -53,9 +54,16 @@ struct best_2opt {
   int minchange;
 };
 
-extern std::ofstream myfile;
+struct tsp_info {
+  std::string name;
+  std::string type;
+  int dim;
+  std::string e_weight;
+  int solution;
+};
 
-typedef int (*func)(int i, int j, struct city_coords *coords);
+// File to hold results
+extern std::ofstream myfile;
 
 class tsp
 {
@@ -80,13 +88,12 @@ private:
   struct city_coords *inputCoords;
   struct city_coords *orderCoords;
   struct best_2opt *gpuResult;
+  struct tsp_info *tsp_info;
   int *route;
   int *new_route;
   int *temp_route;
   int (edge_weight::*pFun) (int num_cities, struct city_coords *coords);  edge_weight obj;
   bool improve;
   bool timeCap;
-  func *h_func;
-
 };
 #endif

@@ -14,11 +14,10 @@ ARCHS		:= -gencode arch=compute_20,code=sm_20 \
 				-gencode arch=compute_32,code=sm_32 \
 				-gencode arch=compute_35,code=sm_35 \
 				-gencode arch=compute_50,code=sm_50 \
-				-gencode arch=compute_52,code=sm_52 \
-				-gencode arch=compute_53,code=sm_53
+				-gencode arch=compute_52,code=sm_52
 				
-CPPFLAGS	:= -O3 -g -m64 -fPIC -Wall -Wextra -std=c++11
-NVCCFLAGS  	:= -O3 -G -g -m64 -std=c++11 -w --use_fast_math -res-usage -lineinfo -Xptxas -v
+CPPFLAGS	:= -O3 -g -fPIC -Wall -Wextra -std=c++11
+NVCCFLAGS  	:= -O3 -G -g -std=c++11 -w --use_fast_math -res-usage -lineinfo -Xptxas -v
 CUDA_LINK_FLAGS := -lcuda -lcudart 
 
 OBJECTS :=\
@@ -30,37 +29,43 @@ OBJECTS :=\
 
 OUT_FILES = $(wildcard $(OBJDIR)/*.o)
 
-OS := $(shell uname)
-
-ifeq ($(OS),Linux)
-  NPROCS := $(shell grep -c ^processor /proc/cpuinfo)
-else ifeq ($(OS),Darwin)
-  NPROCS := $(shell sysctl hw.ncpu | awk '{print $$2}')
-endif # $(OS)
-
-HOST := $(shell hostname | awk -F. '{print $$1}')
+OS 		:= $(shell uname)
+CPUARCH := $(shell uname -p)
+HOST 	:= $(shell hostname | awk -F. '{print $$1}')
 
 ifeq ($(OS),Linux)
 #LINUX
-CUDA_LIBRARY_DIR = /usr/local/cuda/lib64
-CUDA_INCLUDE_DIR = /usr/local/cuda/include
-NVCC_PATH = /usr/local/cuda/bin/nvcc
-endif
-ifeq ($(OS),Darwin)
+  ifeq ($(CPUARCH), x86_64)
+    CUDA_LIBRARY_DIR = /usr/local/cuda/lib64
+    ARCHFLAG := -m64
+  else
+    CUDA_LIBRARY_DIR = /usr/local/cuda/lib
+    ARCHFLAG := -m32
+  endif # $(CPUARCH)
+  CUDA_INCLUDE_DIR = /usr/local/cuda/include
+  NVCC_PATH = /usr/local/cuda/bin/nvcc
+  NPROCS := $(shell grep -c ^processor /proc/cpuinfo)
+  
+else ifeq ($(OS),Darwin)
 #MAC OS - mine at least
-CUDA_LIBRARY_DIR = /usr/local/cuda/lib
-CUDA_INCLUDE_DIR = /Developer/NVIDIA/CUDA-7.5/include
-NVCC_PATH = /Developer/NVIDIA/CUDA-7.5/bin/nvcc
+  CUDA_LIBRARY_DIR = /usr/local/cuda/lib
+  CUDA_INCLUDE_DIR = /Developer/NVIDIA/CUDA-7.5/include
+  NVCC_PATH = /Developer/NVIDIA/CUDA-7.5/bin/nvcc
+  ARCHFLAG := -m64
+  NPROCS := $(shell sysctl hw.ncpu | awk '{print $$2}')
 endif
 
-LINKFLAGS := -L$(CUDA_LIBRARY_DIR) -I$(CUDA_INCLUDE_DIR) $(CUDA_LINK_FLAGS)
+LINKFLAGS	:= -L$(CUDA_LIBRARY_DIR) -I$(CUDA_INCLUDE_DIR) $(CUDA_LINK_FLAGS)
+CPPFLAGS	+= $(ARCHFLAG)
+NVCCFLAGS	+= $(ARCHFLAG)
 
 info:
-		@echo
-		@echo "HOST =" $(HOST)
-		@echo "DETECTED OS =" $(OS)
-		@echo "DETECTED" $(NPROCS) "CPUs"
-		@echo
+	@echo
+	@echo "HOST =" $(HOST)
+	@echo "DETECTED OS =" $(OS)
+	@echo "DETECTED ARCH =" $(CPUARCH)
+	@echo "DETECTED" $(NPROCS) "CPUs"
+	@echo
 
 tsp_cuda2opt: info $(OBJECTS)
 	$(CXX_PATH) -o tsp_cuda2opt $(OUT_FILES) $(LINKFLAGS) $(CPPFLAGS)
