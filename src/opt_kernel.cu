@@ -69,7 +69,7 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
 
       if (id < max) {
 	  // Indexing Lower Triangular Matrix
-	  i = (unsigned int) (3 + sqrt((float) 8.0 * (float) id + (float) 1.0))/2;
+	  i = (unsigned int) (3 + __fsqrt_rn((float) 8.0 * (float) id + (float) 1.0))/2;
 	  j = id - (i-2) * (i-1) / 2 + 1;
 
 	  // Calculate change
