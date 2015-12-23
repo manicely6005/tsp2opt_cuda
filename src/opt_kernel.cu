@@ -102,48 +102,9 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   }
 }
 
-__device__ int geo(int i, int j, struct city_coords *coords) {
-  register int deg;
-  register float xi, yi, xj, yj;
-  register double PI = 3.141492;
-  register double min, latitude_i, latitude_j, longitude_i, longitude_j, RRR, q1, q2, q3;
-
-  // matrix[i] - 1 convert the 1 based matrix to the 0 based crap
-  xi = coords[i].x;
-  yi = coords[i].y;
-  xj = coords[j].x;
-  yj = coords[j].y;
-
-  deg = (int) xi;
-  min = xi - deg;
-  latitude_i = PI * (deg + 5.0 * min/3.0) / 180.0;
-
-  deg = (int) yi;
-  min = yi - deg;
-  longitude_i = PI * (deg + 5.0 * min/3.0) / 180.0;
-
-  deg = (int) xj;
-  min = xj - deg;
-  latitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
-
-  deg = (int) yj;
-  min = yj - deg;
-  longitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
-
-  // The distance between two different nodes i and j in kilometers is then computed as follows:
-  RRR = 6378.388;
-
-  q1 = cos(longitude_i - longitude_j);
-  q2 = cos(latitude_i - latitude_j);
-  q3 = cos(latitude_i + latitude_j);
-
-  return ((int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0));
-}
-
 __device__ int euc2d(int i, int j, struct city_coords *coords) {
   register float xi, yi, xj, yj, xd, yd;
 
-  // route[i] - 1 convert the 1 based arr to the 0 based coord
   xi = coords[i].x;
   yi = coords[i].y;
   xj = coords[j].x;
@@ -154,3 +115,42 @@ __device__ int euc2d(int i, int j, struct city_coords *coords) {
 
   return ((int) floor(sqrt(xd + yd) + 0.5));
 }
+
+//__device__ int geo(int i, int j, struct city_coords *coords) {
+//  register int deg;
+//  register float xi, yi, xj, yj;
+//  register double PI = 3.141492;
+//  register double min, latitude_i, latitude_j, longitude_i, longitude_j, RRR, q1, q2, q3;
+//
+//  xi = coords[i].x;
+//  yi = coords[i].y;
+//  xj = coords[j].x;
+//  yj = coords[j].y;
+//
+//  deg = (int) xi;
+//  min = xi - deg;
+//  latitude_i = PI * (deg + 5.0 * min/3.0) / 180.0;
+//
+//  deg = (int) yi;
+//  min = yi - deg;
+//  longitude_i = PI * (deg + 5.0 * min/3.0) / 180.0;
+//
+//  deg = (int) xj;
+//  min = xj - deg;
+//  latitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
+//
+//  deg = (int) yj;
+//  min = yj - deg;
+//  longitude_j = PI * (deg + 5.0 * min/3.0) / 180.0;
+//
+//  // The distance between two different nodes i and j in kilometers is then computed as follows:
+//  RRR = 6378.388;
+//
+//  q1 = cos(longitude_i - longitude_j);
+//  q2 = cos(latitude_i - latitude_j);
+//  q3 = cos(latitude_i + latitude_j);
+//
+//  return ((int) (RRR * acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0));
+//}
+
+

@@ -34,6 +34,8 @@
 #include <iterator>
 #include <cstring>
 #include <algorithm>
+#include <string>
+#include <ctime>
 #include "algorithms.h"
 #include "edge_weight.h"
 #include "wrapper.cuh"
@@ -169,7 +171,7 @@ int tsp::read_file(int argc, char *argv[])
 	  } else if (!line.find("DIMENSION")) {
 	      std::getline(iss, result, ':');
 	      std::getline(iss, result, '\n');
-	      tsp_info->dim = stoi(result);
+	      tsp_info->dim = std::stoi(result);
 
 	  } else if (!line.find("EDGE_WEIGHT_TYPE")) {
 	      std::getline(iss, result, ':');
@@ -207,7 +209,7 @@ int tsp::read_file(int argc, char *argv[])
   printf("Solution = %d\n", tsp_info->solution);
   printf("\n");
 
-  return tsp_info->dim;
+  return (tsp_info->dim);
 }
 
 void tsp::two_opt()
@@ -224,7 +226,7 @@ void tsp::two_opt()
 
   printf("Optimal Distance = %d\n\n", tsp_info->solution);
 
-  for (int seed=19; seed<20; seed++) {
+  for (int seed=0; seed<seedCount; seed++) {
 
   improve = true;	// Continue search 2-opt swaps
   timeCap = false;	// If search time limit is exceeded, set flag
@@ -276,7 +278,7 @@ void tsp::two_opt()
 
 	  // If new distance is not less than the old but greater than desired
 	  // This help find global minimum
-      } else if (new_distance > (tsp_info->solution*1.05)) {
+      } else if (new_distance > (int)(tsp_info->solution*tolerance)) {
 	  int ii = rand() % (num_cities - 1) + 1;	// Index range 1 to num_cities
 	  int jj = rand() % (num_cities - 1) + 1;	// Can't select first or last index
 	  if (ii < jj) {
@@ -371,7 +373,7 @@ void tsp::creatOrderCoord(int *arr) {
 
 void tsp::write_file(int distance, std::chrono::duration<double> elapsed_seconds) {
   if(timeCap) {
-      myfile << elapsed_seconds.count()<< ", " << "ERROR" << "\n";
+      myfile << elapsed_seconds.count()<< ", " << distance << ", " << "ERROR TIMECAP" << "\n";
   } else {
       myfile << elapsed_seconds.count()<< ", " << distance << "\n";
   }

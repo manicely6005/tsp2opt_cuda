@@ -17,7 +17,7 @@ ARCHS		:= -gencode arch=compute_20,code=sm_20 \
 				-gencode arch=compute_52,code=sm_52
 				
 CPPFLAGS	:= -O3 -g -fPIC -Wall -Wextra -std=c++11
-NVCCFLAGS  	:= -O3 -G -g -std=c++11 -w --use_fast_math -res-usage -lineinfo -Xptxas -v
+NVCCFLAGS  	:= -O3 -G -std=c++11 -w --use_fast_math -res-usage -lineinfo -Xptxas -v
 CUDA_LINK_FLAGS := -lcuda -lcudart 
 
 OBJECTS :=\

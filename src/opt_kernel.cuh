@@ -35,6 +35,6 @@
  __device__ best_2opt best;
 
 __device__ int euc2d(int i, int j, struct city_coords *coords);
-__device__ int ceil2d(int i, int j, struct city_coords *coords);
-__device__ int geo(int i, int j, struct city_coords *coords);
-__device__ int att(int i, int j, struct city_coords *coords);
+//__device__ int ceil2d(int i, int j, struct city_coords *coords);
+//__device__ int geo(int i, int j, struct city_coords *coords);
+//__device__ int att(int i, int j, struct city_coords *coords);
