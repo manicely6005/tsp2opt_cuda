@@ -55,6 +55,8 @@ struct best_2opt {
 
 extern std::ofstream myfile;
 
+typedef int (*func)(int i, int j, struct city_coords *coords);
+
 class tsp
 {
 
@@ -84,6 +86,7 @@ private:
   int (edge_weight::*pFun) (int num_cities, struct city_coords *coords);  edge_weight obj;
   bool improve;
   bool timeCap;
+  func *h_func;
 
 };
 #endif

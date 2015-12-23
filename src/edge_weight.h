@@ -30,7 +30,6 @@
 #define edge_weight_h
 
 #include <stdio.h>
-#include <vector>
 
 class edge_weight
 {

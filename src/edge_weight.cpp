@@ -32,13 +32,10 @@
 #include "algorithms.h"
 #include <cmath>
 
-#define WIDTH 3
-
 edge_weight::edge_weight()
 {
 }
 
-//Destructor clears the deques
 edge_weight::~edge_weight()
 {
 }
@@ -52,7 +49,6 @@ int edge_weight::euc2d(int num_cities, struct city_coords *coords)
   for (int i=0; i<num_cities; i++) {
     j = i + 1;
     
-    // route[i] - 1 convert the 1 based arr to the 0 based coord
     xi = coords[i].x;
     yi = coords[i].y;
     xj = coords[j].x;
@@ -74,7 +70,6 @@ int edge_weight::ceil2d(int num_cities, struct city_coords *coords)
   for (int i=0; i<num_cities; i++) {
     j = i + 1;
     
-    // arr[i] - 1 convert the 1 based arr to the 0 based coord
     xi = coords[i].x;
     yi = coords[i].y;
     xj = coords[j].x;
@@ -99,7 +94,6 @@ int edge_weight::geo(int num_cities, struct city_coords *coords)
   for (int i=0; i<num_cities; i++) {
     j = i + 1;
     
-    // arr[i] - 1 convert the 1 based arr to the 0 based coord
     xi = coords[i].x;
     yi = coords[i].y;
     xj = coords[j].x;
@@ -142,7 +136,6 @@ int edge_weight::att(int num_cities, struct city_coords *coords)
   for (int i=0; i<num_cities; i++) {
     j = i + 1;
     
-    // arr[i] - 1 convert the 1 based arr to the 0 based coord
     xi = coords[i].x;
     yi = coords[i].y;
     xj = coords[j].x;

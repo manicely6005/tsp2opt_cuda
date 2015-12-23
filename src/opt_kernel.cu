@@ -33,8 +33,6 @@
 #include "wrapper.cuh"
 #include "algorithms.h"
 
-#define WIDTH 3
-
 __global__ void find_route(int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations, best_2opt *best_block) {
 
   __shared__ city_coords cache[MAX_CITIES];
@@ -158,3 +156,5 @@ __device__ int euc2d(int i, int j, struct city_coords *coords) {
 
   return ((int) floor(sqrt(xd + yd) + 0.5));
 }
+
+__device__ func pfunc1 = euc2d;

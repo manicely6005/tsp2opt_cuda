@@ -29,14 +29,9 @@
  *
  ******************************************************************************/
 
-#include <cstdio>
-#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <iterator>
-#include <algorithm>
-#include <ctime>
 #include "algorithms.h"
 #include "edge_weight.h"
 #include "wrapper.cuh"
@@ -49,9 +44,7 @@ struct tsp_info {
   int solution;
 } tsp_info;
 
-
 std::ofstream myfile;
-
 
 //Constructor that takes a character string corresponding to an external filename and reads in cities from that file
 tsp::tsp(int argc, char * argv[])
@@ -64,6 +57,8 @@ tsp::tsp(int argc, char * argv[])
   route = new int [num_cities+1];
   new_route = new int [num_cities+1];
   temp_route = new int [num_cities+1];
+
+  h_func = new func;
 
   if (tsp_info.e_weight.c_str() == pStr[0]) {
       pFun = &edge_weight::euc2d;
@@ -239,7 +234,7 @@ void tsp::two_opt()
 
   printf("Optimal Distance = %d\n\n", tsp_info.solution);
 
-  for (int seed=0; seed<seedCount; seed++) {
+  for (int seed=19; seed<20; seed++) {
 
   improve = true;
   timeCap = false;		// If search time limit is exceeded, set flag
