@@ -55,7 +55,7 @@ void getGPU_Info(void) {
   } else if (deviceCount > 1) {
       printf("Found %d CUDA Capable device(s)\n", deviceCount);
       printf("Setting Device to Device 1\n\n");
-      cudaSetDevice(0);
+      HANDLE_ERROR(cudaSetDevice(0));
   }
 }
 
@@ -128,10 +128,10 @@ void cuda_function(int num_cities, city_coords *h_coords, best_2opt *gpuResult) 
   memcpy((void*)gpuResult, (void*)&h_block[0], sizeof(struct best_2opt));
 
   // Delete allocate memory
-  cudaFree(d_coords);
-  cudaFree(d_block);
+  HANDLE_ERROR(cudaFree(d_coords));
+  HANDLE_ERROR(cudaFree(d_block));
 #ifdef ARM
-  cudaFreeHost(h_block);
+  HANDLE_ERROR(cudaFreeHost(h_block));
 #else
   delete(h_block);
 #endif
@@ -142,5 +142,5 @@ void initGPU() {
 }
 
 void resetGPU() {
-  cudaDeviceReset();
+  HANDLE_ERROR(cudaDeviceReset());
 }

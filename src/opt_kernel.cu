@@ -36,7 +36,6 @@
 __global__ void find_route(int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations, best_2opt *best_block) {
 
   __shared__ city_coords cache[MAX_CITIES];
-//  __shared__ int cities;
   __shared__ best_2opt best_thread[threadsPerBlock];
 
   register int idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -48,8 +47,6 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   register int change;
   register struct best_2opt best = {0,0,999999};
   register int cities = num_cities;
-
-//  cities = num_cities;
 
   for (register int i=threadIdx.x; i<cities; i+= blockDim.x) {
       cache[i] = coords[i];
