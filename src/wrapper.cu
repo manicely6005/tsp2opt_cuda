@@ -64,19 +64,18 @@ void cuda_function(int num_cities, city_coords *h_coords, best_2opt *gpuResult) 
   int gridSize;       // The actual grid size needed
 
   // Create variables for GPU
+  struct best_2opt *h_block;
   struct city_coords *d_coords;
   struct best_2opt *d_block;
 
   // Determine thread size and block size
   gridSize = (num_cities + threadsPerBlock - 1) / threadsPerBlock;
 
-  // Array of structures to hold best result from each block
-  struct best_2opt *h_block;
-  h_block = new struct best_2opt[gridSize * 3];
+  h_block = new struct best_2opt[gridSize];
 
   // Allocate memory on GPU
-  HANDLE_ERROR(cudaMallocHost((void**)&d_coords, num_cities * sizeof(struct city_coords)));
-  HANDLE_ERROR(cudaMallocHost((void**)&d_block, gridSize * sizeof(struct best_2opt)));
+  HANDLE_ERROR(cudaMalloc((void**)&d_coords, num_cities * sizeof(struct city_coords)));
+  HANDLE_ERROR(cudaMalloc((void**)&d_block, gridSize * sizeof(struct best_2opt)));
 
   // Copy from CPU to GPU
   HANDLE_ERROR(cudaMemcpy(d_coords, h_coords, num_cities * sizeof(struct city_coords), cudaMemcpyHostToDevice));
@@ -104,6 +103,8 @@ void cuda_function(int num_cities, city_coords *h_coords, best_2opt *gpuResult) 
   memcpy((void*)gpuResult, (void*)&h_block[0], sizeof(struct best_2opt));
 
   // Delete allocate memory
+  cudaFree(d_coords);
+  cudaFree(d_block);
   delete(h_block);
 }
 

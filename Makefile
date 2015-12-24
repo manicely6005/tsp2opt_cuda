@@ -17,7 +17,7 @@ ARCHS		:= -gencode arch=compute_20,code=sm_20 \
 				-gencode arch=compute_52,code=sm_52
 				
 CPPFLAGS	:= -O3 -g -fPIC -Wall -Wextra -std=c++11
-NVCCFLAGS  	:= -O3 -G -std=c++11 -w --use_fast_math -res-usage -lineinfo -Xptxas -v
+NVCCFLAGS  	:= -O3 -G -std=c++11 -w --use_fast_math -lineinfo -Xptxas -v
 CUDA_LINK_FLAGS := -lcuda -lcudart 
 
 OBJECTS :=\
@@ -38,9 +38,11 @@ ifeq ($(OS),Linux)
   ifeq ($(CPUARCH), x86_64)
     CUDA_LIBRARY_DIR = /usr/local/cuda/lib64
     ARCHFLAG := -m64
-  else
+  else ifeq ($(CPUARCH), i386)
     CUDA_LIBRARY_DIR = /usr/local/cuda/lib
     ARCHFLAG := -m32
+  else
+    CUDA_LIBRARY_DIR = /usr/local/cuda/lib
   endif # $(CPUARCH)
   CUDA_INCLUDE_DIR = /usr/local/cuda/include
   NVCC_PATH = /usr/local/cuda/bin/nvcc

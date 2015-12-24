@@ -93,6 +93,7 @@ tsp::~tsp()
   delete(inputCoords);
   delete(orderCoords);
   delete(gpuResult);
+  delete(tsp_info);
   delete(route);
   delete(new_route);
   delete(temp_route);
