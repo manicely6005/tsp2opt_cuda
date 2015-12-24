@@ -63,14 +63,38 @@ void cuda_function(int num_cities, city_coords *h_coords, best_2opt *gpuResult) 
 
   int gridSize;       // The actual grid size needed
 
-  // Create variables for GPU
+  // Create variables for CPU
   struct best_2opt *h_block;
+
+  // Create variables for GPU
   struct city_coords *d_coords;
   struct best_2opt *d_block;
 
   // Determine thread size and block size
   gridSize = (num_cities + threadsPerBlock - 1) / threadsPerBlock;
 
+  // If Jetson TK1 ran Toolkit 7.x
+  // Since the Jetson uses integrated memory, the proper way would be to use mapped memory.
+  // Since the memory for orderCoords is allocated in algorithms.cpp, the correct way
+  // to pin to memory would be to use cudaHostRegister() and then cudaFreeHostRegister to
+  // free from memory. Unfortunately, cudaHostRegister doesn't work with the combination
+  // Linux, Arm7l, and CUDA toolkit 6.5
+  //  HANDLE_ERROR(cudaHostRegister(h_coords, num_cities * sizeof(struct city_coords), cudaHostRegisterMapped));
+
+#ifdef ARM
+  // Allocate pinned memory
+  HANDLE_ERROR(cudaHostAlloc((void**)&h_block, gridSize * sizeof(struct best_2opt), cudaHostAllocMap$
+
+  // Get pointer for pinned memory
+  HANDLE_ERROR(cudaHostGetDevicePointer((void**)&d_block, (void*)h_block, 0));
+
+  // Allocate memory on GPU
+  HANDLE_ERROR(cudaMalloc((void**)&d_coords, num_cities * sizeof(struct city_coords)));
+
+  // Copy from CPU to GPU
+  HANDLE_ERROR(cudaMemcpy(d_coords, h_coords, num_cities * sizeof(struct city_coords), cudaMemcpyHostToDevice));
+#else
+  // Allocate host memory
   h_block = new struct best_2opt[gridSize];
 
   // Allocate memory on GPU
@@ -80,6 +104,7 @@ void cuda_function(int num_cities, city_coords *h_coords, best_2opt *gpuResult) 
   // Copy from CPU to GPU
   HANDLE_ERROR(cudaMemcpy(d_coords, h_coords, num_cities * sizeof(struct city_coords), cudaMemcpyHostToDevice));
   HANDLE_ERROR(cudaMemcpy(d_block, h_block, gridSize * sizeof(struct best_2opt), cudaMemcpyHostToDevice));
+#endif
 
   //to calculate the number of jobs/2-opt changes and iteration number for each thread
   unsigned long long counter = (long)(num_cities-2)*(long)(num_cities-1)/2;
@@ -105,7 +130,15 @@ void cuda_function(int num_cities, city_coords *h_coords, best_2opt *gpuResult) 
   // Delete allocate memory
   cudaFree(d_coords);
   cudaFree(d_block);
+#ifdef ARM
+  cudaFreeHost(h_block);
+#else
   delete(h_block);
+#endif
+}
+
+void initGPU() {
+  HANDLE_ERROR(cudaSetDeviceFlags(cudaDeviceMapHost));
 }
 
 void resetGPU() {

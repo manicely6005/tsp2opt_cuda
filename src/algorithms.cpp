@@ -85,6 +85,11 @@ tsp::tsp(int argc, char * argv[])
       printf("Couldn't open output file.");
       exit(EXIT_FAILURE);
   }
+
+#ifdef ARM
+  // Initialize Jetson TK1 for mapped memory
+  initGPU();
+#endif
 }
 
 // Destructor clears the deques

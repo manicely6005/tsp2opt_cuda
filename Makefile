@@ -43,6 +43,7 @@ ifeq ($(OS),Linux)
     ARCHFLAG := -m32
   else
     CUDA_LIBRARY_DIR = /usr/local/cuda/lib
+    ARCHFLAG := -D ARM	# Define ARM. For initialization of mapped memory
   endif # $(CPUARCH)
   CUDA_INCLUDE_DIR = /usr/local/cuda/include
   NVCC_PATH = /usr/local/cuda/bin/nvcc
@@ -53,7 +54,7 @@ else ifeq ($(OS),Darwin)
   CUDA_LIBRARY_DIR = /usr/local/cuda/lib
   CUDA_INCLUDE_DIR = /Developer/NVIDIA/CUDA-7.5/include
   NVCC_PATH = /Developer/NVIDIA/CUDA-7.5/bin/nvcc
-  ARCHFLAG := -m64
+  ARCHFLAG := -m64 
   NPROCS := $(shell sysctl hw.ncpu | awk '{print $$2}')
 endif
 
