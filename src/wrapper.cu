@@ -61,7 +61,8 @@ wrapper::wrapper(int num_cities)
 wrapper::~wrapper()
 {
   delete(h_block);
-  // Replaces multiple cudaFree's
+  cudaFree(d_coords);
+  cudaFree(d_block);
   HANDLE_ERROR(cudaDeviceReset());
 }
 
