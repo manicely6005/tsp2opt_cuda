@@ -50,23 +50,12 @@ wrapper::wrapper(int num_cities)
   counter = (long)(num_cities-2)*(long)(num_cities-1)/2;
   iterations = (counter/(threadsPerBlock*gridSize)) + 1;
 
-#ifdef ARM
-  // Allocate pinned memory
-  HANDLE_ERROR(cudaHostAlloc((void**)&h_block, gridSize * sizeof(struct best_2opt), cudaHostAllocMapped));
-
-  // Get pointer for pinned memory
-  HANDLE_ERROR(cudaHostGetDevicePointer((void**)&d_block, (void*)h_block, 0));
-
-  // Allocate memory on GPU
-  HANDLE_ERROR(cudaMalloc((void**)&d_coords, num_cities * sizeof(struct city_coords)));
-#else
   // Allocate host memory
   h_block = new struct best_2opt[gridSize];
 
   // Allocate memory on GPU
   HANDLE_ERROR(cudaMalloc((void**)&d_coords, num_cities * sizeof(struct city_coords)));
   HANDLE_ERROR(cudaMalloc((void**)&d_block, gridSize * sizeof(struct best_2opt)));
-#endif
 }
 
 wrapper::~wrapper()
@@ -113,8 +102,4 @@ void wrapper::cuda_function(int num_cities, city_coords *h_coords, best_2opt *gp
 
   // Copy best to structure used by two_opt()
   memcpy((void*)gpuResult, (void*)&h_block[0], sizeof(struct best_2opt));
-}
-
-void wrapper::initGPU() {
-  HANDLE_ERROR(cudaSetDeviceFlags(cudaDeviceMapHost));	// Move to constructor MAYBE
 }

@@ -225,11 +225,6 @@ void tsp::two_opt(void)
   // Create objects
   wrapper wrapper(num_cities);
 
-#ifdef ARM
-  // Initialize Jetson TK1 for mapped memory
-  wrapper.initGPU();
-#endif
-
   // Check GPU Info
   wrapper.getGPU_Info();
 
