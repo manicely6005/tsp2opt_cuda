@@ -26,14 +26,27 @@
  *
  ******************************************************************************/
 
+#ifndef WRAPPER_H
+#define WRAPPER_H
+
 #include "algorithms.h"
 
 const int threadsPerBlock = 1024;
 
-void getGPU_Info(void);
+class wrapper {
+public:
+  wrapper(int num_cities);
+  ~wrapper();
+  void getGPU_Info(void);
+  void cuda_function(int N, city_coords *coords, best_2opt *gpuResult);
+  void initGPU(void);
 
-void cuda_function(int N, city_coords *coords, best_2opt *gpuResult);
-
-void initGPU();
-
-void resetGPU();
+private:
+  int gridSize;
+  unsigned long long counter;
+  unsigned int iterations;
+  struct best_2opt *h_block;
+  struct city_coords *d_coords;
+  struct best_2opt *d_block;
+};
+#endif

@@ -85,15 +85,10 @@ tsp::tsp(int argc, char * argv[])
       printf("Couldn't open output file.");
       exit(EXIT_FAILURE);
   }
-
-#ifdef ARM
-  // Initialize Jetson TK1 for mapped memory
-  initGPU();
-#endif
 }
 
 // Destructor clears the deques
-tsp::~tsp()
+tsp::~tsp(void)
 {
   delete(inputCoords);
   delete(orderCoords);
@@ -218,7 +213,7 @@ int tsp::read_file(int argc, char *argv[])
   return (tsp_info->dim);
 }
 
-void tsp::two_opt()
+void tsp::two_opt(void)
 {
   int *temp;
   int distance, new_distance;
@@ -227,8 +222,16 @@ void tsp::two_opt()
   std::chrono::time_point<std::chrono::high_resolution_clock> start, middle, end;
   std::chrono::duration<double> elapsed_seconds;
 
+  // Create objects
+  wrapper wrapper(num_cities);
+
+#ifdef ARM
+  // Initialize Jetson TK1 for mapped memory
+  wrapper.initGPU();
+#endif
+
   // Check GPU Info
-  getGPU_Info();
+  wrapper.getGPU_Info();
 
   printf("Optimal Distance = %d\n\n", tsp_info->solution);
 
@@ -259,7 +262,7 @@ void tsp::two_opt()
       improve = false;
 
       // Call cuda wrapper
-      cuda_function(num_cities, orderCoords, gpuResult);
+      wrapper.cuda_function(num_cities, orderCoords, gpuResult);
 
       // Create new route with GPU swap result
       if (gpuResult->i < gpuResult->j) {
@@ -330,9 +333,6 @@ void tsp::two_opt()
   std::chrono::system_clock::time_point endPoint = std::chrono::system_clock::now();
   std::time_t end_time = std::chrono::system_clock::to_time_t(endPoint);
   printf("finished computation at %s\n",std::ctime(&end_time));
-
-  // Reset GPU
-  resetGPU();
 }
 
 void tsp::swap_two(const int& i, const int& j)
@@ -355,7 +355,7 @@ void tsp::swap_two(const int& i, const int& j)
   }
 }
 
-void tsp::init_route()
+void tsp::init_route(void)
 {
   for (int i=0; i<num_cities; i++) {
       route[i] = i+1;

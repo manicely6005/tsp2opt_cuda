@@ -26,8 +26,8 @@
  *
  ******************************************************************************/
 
-#ifndef _algorithms_h
-#define _algorithms_h
+#ifndef ALGORITHMS_H
+#define ALGORITHMS_H
 
 #include <vector>
 #include <string>
@@ -35,13 +35,14 @@
 #include <fstream>
 #include "edge_weight.h"
 
+
 //maximum number of cities that can be used in the simple GPU 2-opt algorithm
 //limited by the shared memory size
 //shared memory needed = MAX_CITIES * sizeof(city_coords)
 #define MAX_CITIES 4096
 
 const int timeLimit = 300;
-const int seedCount = 2;
+const int seedCount = 50;
 const float tolerance = 1.05;
 
 struct city_coords{
@@ -72,12 +73,12 @@ class tsp
 public:
   tsp(int argc, char *argv[]); // Constructor, takes filename to read from as input
   tsp(tsp & source);
-  ~tsp();
+  ~tsp(void);
   int read_file(int argc, char *argv[]); // Reads a list of cities into original_list from filename
   int dist(int i, int j); // Calculates the Euclidean distance to another city
-  void two_opt(); // Attempt at 2-opt
+  void two_opt(void); // Attempt at 2-opt
   void swap_two(const int& i, const int& j); // Used by two_opt()
-  void init_route(); // Calculate initial route
+  void init_route(void); // Calculate initial route
   void print(int *arr);
   void creatOrderCoord(int *arr);
   void write_file(int distance, std::chrono::duration<double> elapsed_seconds);
