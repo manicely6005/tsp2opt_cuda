@@ -33,7 +33,8 @@
 #include "wrapper.cuh"
 #include "algorithms.h"
 
-__global__ void find_route(int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations, best_2opt *best_block) {
+__global__ __launch_bounds__(1024,4)
+void find_route(int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations, best_2opt *best_block) {
 
   __shared__ city_coords cache[MAX_CITIES];
   __shared__ best_2opt best_thread[threadsPerBlock];
@@ -59,12 +60,12 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
    */
 
 #pragma unroll
-  for (register int no = 0; no < iter; no++) {
+  for (register unsigned int no = 0; no < iter; no++) {
       id = idx + no * packSize;
 
       if (id < max) {
-	  // Indexing Lower Triangular Matrix
-	  i = (unsigned int) (3 + __fsqrt_rn((float) 8.0 * (float) id + (float) 1.0))/2;
+	  // Indexing Lower Triangular Matrix i = (3 + sqrt(8 * id + 1)) / 2
+	  i = (unsigned int) (3 + __fsqrt_rn(__fmul_rn((float) 8.0, __fadd_rn((float) id, (float) 1.0)))) >> 1;
 	  j = id - (i-2) * (i-1) / 2 + 1;
 
 	  // Calculate change
@@ -83,7 +84,7 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
 
   // Intra-block reduction
   // Reductions, threadsPerBlock must be a power of 2 because of the following code
-  register int k = blockDim.x/2;
+  register unsigned int k = blockDim.x >> 1;
   while (k != 0) {
       if (threadIdx.x < k) {
 	  if (best_thread[threadIdx.x + k].minchange < best_thread[threadIdx.x].minchange) {
@@ -91,7 +92,7 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
 	  }
       }
       __syncthreads();
-      k /= 2;
+      k >>= 1;
   }
 
   // Copying best match from each block to global memory. Reduction will be performed on CPU
@@ -100,7 +101,7 @@ __global__ void find_route(int num_cities,  city_coords *coords, unsigned long l
   }
 }
 
-__device__ int euc2d(int i, int j, struct city_coords *coords) {
+__device__ int euc2d(unsigned int i, unsigned int j, struct city_coords *coords) {
   register float xi, yi, xj, yj, xd, yd;
 
   xi = coords[i].x;
@@ -111,7 +112,7 @@ __device__ int euc2d(int i, int j, struct city_coords *coords) {
   xd = (xi - xj) * (xi - xj);
   yd = (yi - yj) * (yi - yj);
 
-  return ((int) floor(sqrt(xd + yd) + 0.5));
+  return ((int) floor(sqrtf(xd + yd) + 0.5));
 }
 
 //__device__ int geo(int i, int j, struct city_coords *coords) {
