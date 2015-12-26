@@ -42,8 +42,7 @@ __host__ void handleError(cudaError_t err, const char *file, int line) {
 } // HandleError
 #define HANDLE_ERROR( err ) (handleError( err, __FILE__, __LINE__ ))
 
-wrapper::wrapper(int num_cities)
-{
+wrapper::wrapper(int num_cities) {
   gridSize = (num_cities + threadsPerBlock - 1) / threadsPerBlock;
 
   //to calculate the number of jobs/2-opt changes and iteration number for each thread
@@ -58,8 +57,7 @@ wrapper::wrapper(int num_cities)
   HANDLE_ERROR(cudaMalloc((void**)&d_block, gridSize * sizeof(struct best_2opt)));
 }
 
-wrapper::~wrapper()
-{
+wrapper::~wrapper() {
   delete(h_block);
   cudaFree(d_coords);
   cudaFree(d_block);

@@ -44,10 +44,9 @@
 std::ofstream myfile;
 
 // Constructor that takes a character string corresponding to an external filename and reads in cities from that file
-tsp::tsp(int argc, char * argv[])
-{
-  inputCoords = new struct city_coords [MAX_CITIES*2];
-  orderCoords = new struct city_coords [MAX_CITIES*2];
+tsp::tsp(int argc, char * argv[]) {
+  inputCoords = new struct city_coords [maxCities*2];
+  orderCoords = new struct city_coords [maxCities*2];
   gpuResult = new struct best_2opt;
   tsp_info = new struct tsp_info;
 
@@ -88,8 +87,7 @@ tsp::tsp(int argc, char * argv[])
 }
 
 // Destructor clears the deques
-tsp::~tsp(void)
-{
+tsp::~tsp(void) {
   delete(inputCoords);
   delete(orderCoords);
   delete(gpuResult);
@@ -103,8 +101,7 @@ tsp::~tsp(void)
 }
 
 // Read city data from file into tsp's solution member, returns number of cities added
-int tsp::read_file(int argc, char *argv[])
-{
+int tsp::read_file(int argc, char *argv[]) {
   const char *filename;
   std::string input;
 
@@ -213,11 +210,7 @@ int tsp::read_file(int argc, char *argv[])
   return (tsp_info->dim);
 }
 
-void tsp::two_opt(void)
-{
-  int *temp;
-  int distance, new_distance;
-
+void tsp::two_opt(void) {
   // Initialize high resolution clock variables
   std::chrono::time_point<std::chrono::high_resolution_clock> start, middle, end;
   std::chrono::duration<double> elapsed_seconds;
@@ -227,8 +220,6 @@ void tsp::two_opt(void)
 
   // Check GPU Info
   wrapper.getGPU_Info();
-
-  printf("Optimal Distance = %d\n\n", tsp_info->solution);
 
   for (int seed=0; seed<seedCount; seed++) {
 
@@ -251,7 +242,7 @@ void tsp::two_opt(void)
 
   // Calculate initial route distance
   distance = (obj.*pFun)(num_cities, orderCoords);
-  printf("Initial distance = %d\n\n", distance);
+  printf("Initial distance = %d\n", distance);
 
   while(improve) {
       improve = false;
@@ -260,11 +251,7 @@ void tsp::two_opt(void)
       wrapper.cuda_function(num_cities, orderCoords, gpuResult);
 
       // Create new route with GPU swap result
-      if (gpuResult->i < gpuResult->j) {
-	  swap_two(gpuResult->i-1, gpuResult->j);
-      } else {
-	  swap_two(gpuResult->j, gpuResult->i-1);
-      }
+      swap_two();
 
       // Create ordered coordinates from new route
       creatOrderCoord(new_route);
@@ -275,31 +262,22 @@ void tsp::two_opt(void)
       // Check if new route distance is better than last best distance
       if (new_distance < distance) {
 	  distance = new_distance;
-	  temp = route;
-	  route = new_route;
-	  new_route = temp;
+	  replace_route();
 	  improve = true;
 
 	  // If new distance is not less than the old but greater than desired
 	  // This help find global minimum
-      } else if (new_distance > (int)(tsp_info->solution*tolerance)) {
-	  int ii = rand() % (num_cities - 1) + 1;	// Index range 1 to num_cities
-	  int jj = rand() % (num_cities - 1) + 1;	// Can't select first or last index
-	  if (ii < jj) {
-	      swap_two(ii, jj);
-	  } else {
-	      swap_two(jj, ii);
-	  }
+      } else if (new_distance > (int)(tsp_info->solution * tolerance)) {
+	  get_random();
+	  swap_two();
 
 	  // Create ordered coordinates from new route
 	  creatOrderCoord(new_route);
 
-	  // Calculate initial route distance
+	  // Calculate new route distance
 	  distance = (obj.*pFun)(num_cities, orderCoords);
 
-	  temp = route;
-	  route = new_route;
-	  new_route = temp;
+	  replace_route();
 
 	  // Follow code cause search to exit after 5 minutes
 	  middle = std::chrono::high_resolution_clock::now();
@@ -319,7 +297,7 @@ void tsp::two_opt(void)
   end = std::chrono::high_resolution_clock::now();
   elapsed_seconds = end-start;
 
-  write_file(new_distance, elapsed_seconds);
+  write_file(elapsed_seconds);
   printf("Optimized Distance = %d: Seed %d\n\n", new_distance, seed);
   printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
   }
@@ -330,36 +308,43 @@ void tsp::two_opt(void)
   printf("finished computation at %s\n",std::ctime(&end_time));
 }
 
-void tsp::swap_two(const int& i, const int& j)
-{
+void tsp::swap_two(void) {
   int count = 0;
+  int c, i, j;
 
-  for (int c=0; c<i; c++) {
+  // There's an issue, corrected with i
+  if (gpuResult->i < gpuResult->j) {
+      i = gpuResult->i-1;
+      j = gpuResult->j;
+  } else {
+      i = gpuResult->j;
+      j = gpuResult->i-1;
+  }
+
+  for (c=0; c<i; c++) {
       new_route[count] = route[c];
       count++;
   }
 
-  for (int c=j; c>i-1; c--) {
+  for (c=j; c>i-1; c--) {
       new_route[count] = route[c];
       count++;
   }
 
-  for (int c=j+1; c<num_cities+1; c++) {
+  for (c=j+1; c<num_cities+1; c++) {
       new_route[count] = route[c];
       count++;
   }
 }
 
-void tsp::init_route(void)
-{
+void tsp::init_route(void) {
   for (int i=0; i<num_cities; i++) {
       route[i] = i+1;
   }
   route[num_cities] = 1;      // Return to beginning of tour
 }
 
-void tsp::print(int *arr)
-{
+void tsp::print(int *arr) {
   for (int i=0; i<num_cities+1; i++) {
       printf("%d ", arr[i]);
   }
@@ -372,10 +357,22 @@ void tsp::creatOrderCoord(int *arr) {
   }
 }
 
-void tsp::write_file(int distance, std::chrono::duration<double> elapsed_seconds) {
+void tsp::write_file(std::chrono::duration<double> elapsed_seconds) {
   if(timeCap) {
       myfile << elapsed_seconds.count()<< ", " << distance << ", " << "ERROR TIMECAP" << "\n";
   } else {
       myfile << elapsed_seconds.count()<< ", " << distance << "\n";
   }
 }
+
+void tsp::replace_route(void) {
+  temp_route = route;
+  route = new_route;
+  new_route = temp_route;
+}
+
+void tsp::get_random(void) {
+  gpuResult->i = rand() % (num_cities - 1) + 2;	// Index range 1 to num_cities
+  gpuResult->j = rand() % (num_cities - 1) + 1;	// Can't select first or last index
+}
+

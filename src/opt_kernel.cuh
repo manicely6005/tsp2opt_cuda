@@ -33,11 +33,9 @@
 #include <cuda_runtime.h>
 #include "algorithms.h"
 
-__global__ void find_route(int N, city_coords *coords, unsigned long long counter, unsigned int iterations, best_2opt *best_block);
+__global__ void find_route(int N, city_coords *coords, unsigned long long counter, int iterations, best_2opt *best_block);
 
-__device__ best_2opt best;
-
-__device__ int euc2d(unsigned int i, unsigned int j, struct city_coords *coords);
+__inline__ __device__ int euc2d(unsigned int i, unsigned int j, struct city_coords *coords);
 //__device__ int ceil2d(int i, int j, struct city_coords *coords);
 //__device__ int geo(int i, int j, struct city_coords *coords);
 //__device__ int att(int i, int j, struct city_coords *coords);

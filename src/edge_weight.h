@@ -29,8 +29,6 @@
 #ifndef edge_weight_h
 #define edge_weight_h
 
-#include <stdio.h>
-
 class edge_weight
 {
 public:

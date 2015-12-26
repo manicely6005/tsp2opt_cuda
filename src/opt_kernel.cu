@@ -31,25 +31,25 @@
 #include <stdio.h>
 #include "opt_kernel.cuh"
 #include "wrapper.cuh"
-#include "algorithms.h"
 
 __global__ __launch_bounds__(1024,4)
-void find_route(int num_cities,  city_coords *coords, unsigned long long counter, unsigned int iterations, best_2opt *best_block) {
+void find_route(int num_cities,  city_coords *coords, unsigned long long counter, int iterations, best_2opt *best_block) {
 
-  __shared__ city_coords cache[MAX_CITIES];
+  __shared__ city_coords cache[maxCities];
   __shared__ best_2opt best_thread[threadsPerBlock];
 
-  register int idx = threadIdx.x + blockIdx.x * blockDim.x;
-  register int id;
+  register unsigned int tid = threadIdx.x;
+  register unsigned int idx = threadIdx.x + blockIdx.x * blockDim.x;
+  register unsigned int id;
   register unsigned int i, j;
   register unsigned long long max = counter;
-  register int packSize = blockDim.x * gridDim.x;
-  register unsigned int iter = iterations;
+  register unsigned int packSize = blockDim.x * gridDim.x;
+  register int iter = iterations;
   register int change;
   register struct best_2opt best = {0,0,999999};
   register int cities = num_cities;
 
-  for (register int i=threadIdx.x; i<cities; i+= blockDim.x) {
+  for (register int i=tid; i<cities; i+= blockDim.x) {
       cache[i] = coords[i];
   }
   __syncthreads();
@@ -60,7 +60,7 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
    */
 
 #pragma unroll
-  for (register unsigned int no = 0; no < iter; no++) {
+  for (register int no = 0; no < iter; no++) {
       id = idx + no * packSize;
 
       if (id < max) {
@@ -76,7 +76,7 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
 	      best.minchange = change;
 	      best.i = i;
 	      best.j = j;
-	      best_thread[threadIdx.x] = best;
+	      best_thread[tid] = best;
 	  }
       }
   }
@@ -85,14 +85,22 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
   // Intra-block reduction
   // Reductions, threadsPerBlock must be a power of 2 because of the following code
   register unsigned int k = blockDim.x >> 1;
-  while (k != 0) {
+  while (k != 32) {
       if (threadIdx.x < k) {
-	  if (best_thread[threadIdx.x + k].minchange < best_thread[threadIdx.x].minchange) {
-	      best_thread[threadIdx.x] = best_thread[threadIdx.x + k];
-	  }
+	  best_thread[tid] = (best_thread[tid + k].minchange < best_thread[tid].minchange) ? best_thread[tid + k]:best_thread[tid];
       }
       __syncthreads();
       k >>= 1;
+  }
+
+  // No reason to sync a single warp
+  if (threadIdx.x <= 32) {
+      best_thread[tid] = (best_thread[tid + 32].minchange < best_thread[tid].minchange) ? best_thread[tid + 32]:best_thread[tid];
+      best_thread[tid] = (best_thread[tid + 16].minchange < best_thread[tid].minchange) ? best_thread[tid + 16]:best_thread[tid];
+      best_thread[tid] = (best_thread[tid + 8].minchange < best_thread[tid].minchange) ? best_thread[tid + 8]:best_thread[tid];
+      best_thread[tid] = (best_thread[tid + 4].minchange < best_thread[tid].minchange) ? best_thread[tid + 4]:best_thread[tid];
+      best_thread[tid] = (best_thread[tid + 2].minchange < best_thread[tid].minchange) ? best_thread[tid + 2]:best_thread[tid];
+      best_thread[tid] = (best_thread[tid + 1].minchange < best_thread[tid].minchange) ? best_thread[tid + 1]:best_thread[tid];
   }
 
   // Copying best match from each block to global memory. Reduction will be performed on CPU
@@ -101,7 +109,7 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
   }
 }
 
-__device__ int euc2d(unsigned int i, unsigned int j, struct city_coords *coords) {
+__inline__ __device__ int euc2d(unsigned int i, unsigned int j, struct city_coords *coords) {
   register float xi, yi, xj, yj, xd, yd;
 
   xi = coords[i].x;

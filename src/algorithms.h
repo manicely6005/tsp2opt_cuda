@@ -38,11 +38,9 @@
 
 //maximum number of cities that can be used in the simple GPU 2-opt algorithm
 //limited by the shared memory size
-//shared memory needed = MAX_CITIES * sizeof(city_coords)
-#define MAX_CITIES 4096
-
+const int maxCities = 4096;
 const int timeLimit = 300;
-const int seedCount = 50;
+const int seedCount = 1;
 const float tolerance = 1.05;
 
 struct city_coords{
@@ -51,8 +49,8 @@ struct city_coords{
 };
 
 struct best_2opt {
-  unsigned int i;
-  unsigned int j;
+  int i;
+  int j;
   int minchange;
 };
 
@@ -61,7 +59,7 @@ struct tsp_info {
   std::string type;
   int dim;
   std::string e_weight;
-  int solution;
+  unsigned int solution;
 };
 
 // File to hold results
@@ -75,25 +73,23 @@ public:
   tsp(tsp & source);
   ~tsp(void);
   int read_file(int argc, char *argv[]); // Reads a list of cities into original_list from filename
-  int dist(int i, int j); // Calculates the Euclidean distance to another city
   void two_opt(void); // Attempt at 2-opt
-  void swap_two(const int& i, const int& j); // Used by two_opt()
+  void swap_two(); // Used by two_opt()
   void init_route(void); // Calculate initial route
   void print(int *arr);
   void creatOrderCoord(int *arr);
-  void write_file(int distance, std::chrono::duration<double> elapsed_seconds);
+  void write_file(std::chrono::duration<double> elapsed_seconds);
+  void replace_route(void);
+  void get_random(void);
 
 private:
   const std::string pStr[4] = {"EUC_2D", "GEO", "ATT", "CEIL_2D"};
-  int num_cities; // Stores the number of cities read into original_list
+  int num_cities, distance, new_distance;
   std::vector<float> coord;
-  struct city_coords *inputCoords;
-  struct city_coords *orderCoords;
+  struct city_coords *inputCoords, *orderCoords;
   struct best_2opt *gpuResult;
   struct tsp_info *tsp_info;
-  int *route;
-  int *new_route;
-  int *temp_route;
+  int *route, *new_route, *temp_route;
   int (edge_weight::*pFun) (int num_cities, struct city_coords *coords);  edge_weight obj;
   bool improve;
   bool timeCap;

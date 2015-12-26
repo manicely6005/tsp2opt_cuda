@@ -85,5 +85,5 @@ $(OBJDIR)/edge_weight.o: $(SRCDIR)/edge_weight.cpp $(SRCDIR)/edge_weight.h $(SRC
 $(OBJDIR)/opt_kernel.o: $(SRCDIR)/opt_kernel.cu $(SRCDIR)/opt_kernel.cuh $(SRCDIR)/algorithms.h
 	$(NVCC_PATH) $(NVCCFLAGS) $(ARCHS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/opt_kernel.o -c $(SRCDIR)/opt_kernel.cu
 	
-$(OBJDIR)/wrapper.o: $(SRCDIR)/wrapper.cu $(SRCDIR)/wrapper.cuh $(SRCDIR)/opt_kernel.cuh
+$(OBJDIR)/wrapper.o: $(SRCDIR)/wrapper.cu $(SRCDIR)/wrapper.cuh $(SRCDIR)/opt_kernel.cuh $(SRCDIR)/algorithms.h
 	$(NVCC_PATH) $(NVCCFLAGS) $(ARCHS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/wrapper.o -c $(SRCDIR)/wrapper.cu

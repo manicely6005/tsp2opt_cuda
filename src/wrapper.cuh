@@ -43,7 +43,7 @@ public:
 private:
   int gridSize;
   unsigned long long counter;
-  unsigned int iterations;
+  int iterations;
   struct best_2opt *h_block;
   struct city_coords *d_coords;
   struct best_2opt *d_block;
