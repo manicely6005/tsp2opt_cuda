@@ -109,7 +109,7 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
   }
 }
 
-__inline__ __device__ int euc2d(unsigned int i, unsigned int j, struct city_coords *coords) {
+__inline__ __device__ int euc2d(int i, int j, struct city_coords *coords) {
   register float xi, yi, xj, yj, xd, yd;
 
   xi = coords[i].x;
