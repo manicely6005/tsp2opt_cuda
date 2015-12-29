@@ -206,6 +206,9 @@ int tsp::read_file(int argc, char *argv[]) {
   printf("Edge Weight = %s\n", tsp_info->e_weight.c_str());
   printf("Solution = %d\n", tsp_info->solution);
   printf("\n");
+  
+  // Set tolerance
+  tolerance = (tsp_info->dim < (int) 1000) ? lowTolerance:highTolerance;
 
   return (tsp_info->dim);
 }

@@ -39,9 +39,10 @@
 //maximum number of cities that can be used in the simple GPU 2-opt algorithm
 //limited by the shared memory size
 const int maxCities = 4096;
-const int timeLimit = 300;
+const int timeLimit = 1200;
 const int seedCount = 1;
-const float tolerance = 1.05;
+const float lowTolerance = 1.05; 	// Tolerance for data sets smaller than a thousand
+const float highTolerance = 1.12;	// Tolerance for data sets larger than a thousand
 
 struct city_coords{
   float x;
@@ -93,5 +94,6 @@ private:
   int (edge_weight::*pFun) (int num_cities, struct city_coords *coords);  edge_weight obj;
   bool improve;
   bool timeCap;
+  float tolerance;
 };
 #endif
