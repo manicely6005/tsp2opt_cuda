@@ -4,5 +4,5 @@ declare -a array=("burma14" "att48" "eil76" "bier127" "a280" "rd400" "d493" "att
 
 for i in "${array[@]}"
 do
-	./tsp_2opt "TSPLIB/${i}.tsp"
+	./tsp_cuda2opt "TSPLIB/${i}.tsp"
 done
