@@ -4,6 +4,10 @@ all:		tsp_cuda2opt
 
 clean:
 		rm -rf $(OBJDIR)/*o tsp_cuda2opt
+		
+debug:		CPPFLAGS += -g
+debug:		NVCCFLAGS += -G -lineinfo
+debug:		tsp_cuda2opt
 
 CXX_PATH = g++
 SRCDIR		:= src
@@ -16,8 +20,8 @@ ARCHS		:= -gencode arch=compute_20,code=sm_20 \
 				-gencode arch=compute_50,code=sm_50 \
 				-gencode arch=compute_52,code=sm_52
 				
-CPPFLAGS	:= -O3 -g -fPIC -Wall -Wextra -std=c++11
-NVCCFLAGS  	:= -O3 -G -std=c++11 -w --use_fast_math -lineinfo -Xptxas -v
+CPPFLAGS	:= -O3 -Wall -Wextra -std=c++11
+NVCCFLAGS  	:= -O3 -std=c++11 -w --use_fast_math -Xptxas -v -lineinfo
 CUDA_LINK_FLAGS := -lcuda -lcudart 
 
 OBJECTS :=\
