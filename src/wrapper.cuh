@@ -42,6 +42,7 @@ public:
 
 private:
   int gridSize;
+  int dynShared;
   unsigned long long counter;
   int iterations;
   struct best_2opt *h_block;

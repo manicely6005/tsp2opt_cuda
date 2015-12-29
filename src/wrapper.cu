@@ -43,9 +43,20 @@ __host__ void handleError(cudaError_t err, const char *file, int line) {
 #define HANDLE_ERROR( err ) (handleError( err, __FILE__, __LINE__ ))
 
 wrapper::wrapper(int num_cities) {
-  gridSize = (num_cities + threadsPerBlock - 1) / threadsPerBlock;
+  // Get GPU info
+  getGPU_Info();
+  
+  // Get video card properties
+  cudaDeviceProp deviceProp;
+  cudaGetDeviceProperties(&deviceProp, 0);
+  
+  // Calculate amount of shared memory per block
+  dynShared = num_cities * sizeof(struct city_coords) + threadsPerBlock * sizeof(struct best_2opt);
+  
+  // If dynamic shared memory is needed is half the shared memory resources use 2 blocks
+  gridSize = (dynShared < deviceProp.sharedMemPerBlock/2) ? 2:(num_cities + threadsPerBlock - 1) / threadsPerBlock;
 
-  //to calculate the number of jobs/2-opt changes and iteration number for each thread
+  // To calculate the number of jobs/2-opt changes and iteration number for each thread
   counter = (long)(num_cities-2)*(long)(num_cities-1)/2;
   iterations = (counter/(threadsPerBlock*gridSize)) + 1;
 
@@ -53,7 +64,7 @@ wrapper::wrapper(int num_cities) {
   h_block = new struct best_2opt[gridSize];
 
   // Allocate memory on GPU
-  HANDLE_ERROR(cudaMalloc((void**)&d_coords, num_cities * sizeof(struct city_coords)));
+  HANDLE_ERROR(cudaMalloc((void**)&d_coords, maxCities * sizeof(struct city_coords)));
   HANDLE_ERROR(cudaMalloc((void**)&d_block, gridSize * sizeof(struct best_2opt)));
 }
 
@@ -86,7 +97,7 @@ void wrapper::cuda_function(int num_cities, city_coords *h_coords, best_2opt *gp
   HANDLE_ERROR(cudaMemcpy(d_coords, h_coords, num_cities * sizeof(struct city_coords), cudaMemcpyHostToDevice));
 
   // Execute kernel
-  find_route<<<gridSize, threadsPerBlock>>>(num_cities, d_coords, counter, iterations, d_block);
+  find_route<<<gridSize, threadsPerBlock, dynShared>>>(num_cities, d_coords, counter, iterations, d_block);
 
   // Sync Device
   HANDLE_ERROR(cudaDeviceSynchronize());

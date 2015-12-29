@@ -35,13 +35,15 @@
 __global__ __launch_bounds__(1024,4)
 void find_route(int num_cities,  city_coords *coords, unsigned long long counter, int iterations, best_2opt *best_block) {
 
-  __shared__ city_coords cache[maxCities];
-  __shared__ best_2opt best_thread[threadsPerBlock];
+  // Dynamically allocated shared memory
+  extern __shared__ best_2opt s[];
+  best_2opt *best_thread = s;
+  city_coords *cache = (city_coords*)&best_thread[threadsPerBlock];
 
   register unsigned int tid = threadIdx.x;
   register unsigned int idx = threadIdx.x + blockIdx.x * blockDim.x;
   register unsigned int id;
-  register unsigned int i, j;
+  register int i, j;
   register unsigned long long max = counter;
   register unsigned int packSize = blockDim.x * gridDim.x;
   register int iter = iterations;
@@ -65,7 +67,7 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
 
       if (id < max) {
 	  // Indexing Lower Triangular Matrix i = (3 + sqrt(8 * id + 1)) / 2
-	  i = (unsigned int) (3 + __fsqrt_rn(__fmul_rn((float) 8.0, __fadd_rn((float) id, (float) 1.0)))) >> 1;
+	  i = (int) (3 + __fsqrt_rn(__fmul_rn((float) 8.0, __fadd_rn((float) id, (float) 1.0)))) >> 1;
 	  j = id - (i-2) * (i-1) / 2 + 1;
 
 	  // Calculate change
@@ -111,7 +113,7 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
 
 __inline__ __device__ int euc2d(int i, int j, struct city_coords *coords) {
   register float xi, yi, xj, yj, xd, yd;
-
+  
   xi = coords[i].x;
   yi = coords[i].y;
   xj = coords[j].x;

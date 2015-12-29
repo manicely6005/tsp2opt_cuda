@@ -221,9 +221,6 @@ void tsp::two_opt(void) {
   // Create objects
   wrapper wrapper(num_cities);
 
-  // Check GPU Info
-  wrapper.getGPU_Info();
-
   for (int seed=0; seed<seedCount; seed++) {
 
   improve = true;	// Continue search 2-opt swaps
