@@ -64,7 +64,7 @@ wrapper::wrapper(int num_cities) {
   h_block = new struct best_2opt[gridSize];
 
   // Allocate memory on GPU
-  HANDLE_ERROR(cudaMalloc((void**)&d_coords, maxCities * sizeof(struct city_coords)));
+  HANDLE_ERROR(cudaMalloc((void**)&d_coords, num_cities * sizeof(struct city_coords)));
   HANDLE_ERROR(cudaMalloc((void**)&d_block, gridSize * sizeof(struct best_2opt)));
 }
 
