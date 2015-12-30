@@ -28,11 +28,30 @@
 
 #include "algorithms.h"
 #include <iostream>
+#include <mpi.h>
 
 int main(int argc, char * argv[])
 {
+  // Initialize MPI
+  MPI::Init(argc, argv);
+  
+  // Get myid and # of processors 
+  int numproc = MPI::COMM_WORLD.Get_size();
+  int myid = MPI::COMM_WORLD.Get_rank();
+  
+  std::cout << "hello from " << myid << std::endl;
+ 
+  // wait until all processors come here 
+  MPI::COMM_WORLD.Barrier();
+ 
+  if ( myid == 0 ) {
+    // only myid = 0 do this
+    std::cout << numproc << " processors said hello!" << std::endl;
+  }
+  
   tsp test(argc, argv); //read in command line input
   test.two_opt();
   
+  MPI::Finalize();
   exit(EXIT_SUCCESS);
 }

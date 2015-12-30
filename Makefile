@@ -9,33 +9,33 @@ debug:		CPPFLAGS += -g
 debug:		NVCCFLAGS += -G -lineinfo
 debug:		tsp_cuda2opt
 
-CXX_PATH = g++
+CXX	 	:= g++
 SRCDIR		:= src
 OBJDIR		:= obj
+MPICXX		:= mpic++
 
 ARCHS		:= -gencode arch=compute_20,code=sm_20 \
-				-gencode arch=compute_30,code=sm_30 \
-				-gencode arch=compute_32,code=sm_32 \
-				-gencode arch=compute_35,code=sm_35 \
-				-gencode arch=compute_50,code=sm_50 \
-				-gencode arch=compute_52,code=sm_52
-				
-CPPFLAGS	:= -O3 -Wall -Wextra -std=c++11
+		-gencode arch=compute_30,code=sm_30 \
+		-gencode arch=compute_32,code=sm_32 \
+		-gencode arch=compute_35,code=sm_35 \
+		-gencode arch=compute_50,code=sm_50 \
+		-gencode arch=compute_52,code=sm_52
+	
+CXXFLAGS	:= -O3 -Wall -Wextra -std=c++11
 NVCCFLAGS  	:= -O3 -std=c++11 -w --use_fast_math -Xptxas -v
 CUDA_LINK_FLAGS := -lcuda -lcudart 
+OMPI		:= $(shell mpicc --showme:compile)
 
-OBJECTS :=\
-	$(OBJDIR)/main.o\
-	$(OBJDIR)/algorithms.o\
-	$(OBJDIR)/edge_weight.o\
-	$(OBJDIR)/opt_kernel.o\
-	$(OBJDIR)/wrapper.o
-
-OUT_FILES = $(wildcard $(OBJDIR)/*.o)
+OBJECTS 	:=\
+		$(OBJDIR)/opt_kernel.o\
+		$(OBJDIR)/wrapper.o\
+		$(OBJDIR)/edge_weight.o\
+		$(OBJDIR)/algorithms.o\
+		$(OBJDIR)/main.o
 
 OS 		:= $(shell uname)
-CPUARCH := $(shell uname -p)
-HOST 	:= $(shell hostname | awk -F. '{print $$1}')
+CPUARCH 	:= $(shell uname -p)
+HOST 		:= $(shell hostname | awk -F. '{print $$1}')
 
 ifeq ($(OS),Linux)
 #LINUX
@@ -63,7 +63,7 @@ else ifeq ($(OS),Darwin)
 endif
 
 LINKFLAGS	:= -L$(CUDA_LIBRARY_DIR) -I$(CUDA_INCLUDE_DIR) $(CUDA_LINK_FLAGS)
-CPPFLAGS	+= $(ARCHFLAG)
+CXXFLAGS	+= $(ARCHFLAG)
 NVCCFLAGS	+= $(ARCHFLAG)
 
 info:
@@ -75,19 +75,16 @@ info:
 	@echo
 
 tsp_cuda2opt: info $(OBJECTS)
-	$(CXX_PATH) -o tsp_cuda2opt $(OUT_FILES) $(LINKFLAGS) $(CPPFLAGS)
+	$(MPICXX) $(OBJECTS) -o tsp_cuda2opt $(LINKFLAGS) $(CXXFLAGS) $(OMPI)
 
 $(OBJDIR)/main.o: $(SRCDIR)/main.cpp $(SRCDIR)/algorithms.h
-	$(CXX_PATH) $(CPPFLAGS) -o $(OBJDIR)/main.o -c $(SRCDIR)/main.cpp
+	$(MPICXX) $(CXXFLAGS) $(OMPI) -o $(OBJDIR)/main.o -c $(SRCDIR)/main.cpp
 
 $(OBJDIR)/algorithms.o: $(SRCDIR)/algorithms.cpp $(SRCDIR)/algorithms.h $(SRCDIR)/wrapper.cuh
-	$(CXX_PATH) $(CPPFLAGS) -o $(OBJDIR)/algorithms.o -c $(SRCDIR)/algorithms.cpp
+	$(CXX) $(CXXFLAGS) -o $(OBJDIR)/algorithms.o -c $(SRCDIR)/algorithms.cpp
 
 $(OBJDIR)/edge_weight.o: $(SRCDIR)/edge_weight.cpp $(SRCDIR)/edge_weight.h $(SRCDIR)/algorithms.h
-	$(CXX_PATH) $(CPPFLAGS) -o $(OBJDIR)/edge_weight.o -c $(SRCDIR)/edge_weight.cpp
+	$(CXX) $(CXXFLAGS) -o $(OBJDIR)/edge_weight.o -c $(SRCDIR)/edge_weight.cpp
 	
-$(OBJDIR)/opt_kernel.o: $(SRCDIR)/opt_kernel.cu $(SRCDIR)/opt_kernel.cuh $(SRCDIR)/algorithms.h
-	$(NVCC_PATH) $(NVCCFLAGS) $(ARCHS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/opt_kernel.o -c $(SRCDIR)/opt_kernel.cu
-	
-$(OBJDIR)/wrapper.o: $(SRCDIR)/wrapper.cu $(SRCDIR)/wrapper.cuh $(SRCDIR)/opt_kernel.cuh $(SRCDIR)/algorithms.h
-	$(NVCC_PATH) $(NVCCFLAGS) $(ARCHS) -L$(CUDA_LIBRARY_DIR) -L$(CUDA_BIN_DIR) -I$(CUDA_INCLUDE_DIR) -o $(OBJDIR)/wrapper.o -c $(SRCDIR)/wrapper.cu
+$(OBJDIR)/%.o: $(SRCDIR)/%.cu
+	$(NVCC_PATH) $(NVCCFLAGS) $(ARCHS) $(LINKFLAGS) -o $@ -c $^
