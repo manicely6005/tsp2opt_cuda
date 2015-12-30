@@ -43,6 +43,15 @@
 // Global
 std::ofstream myfile;
 
+// Continue search if true
+volatile sig_atomic_t improve;
+
+// Function to handle alarm signal
+void handle_alarm(int) {
+  improve = false;
+  alarm(timeLimit);
+}
+
 // Constructor that takes a character string corresponding to an external filename and reads in cities from that file
 tsp::tsp(int argc, char * argv[]) {
   inputCoords = new struct city_coords [maxCities*2];
@@ -206,7 +215,7 @@ int tsp::read_file(int argc, char *argv[]) {
   printf("Edge Weight = %s\n", tsp_info->e_weight.c_str());
   printf("Solution = %d\n", tsp_info->solution);
   printf("\n");
-  
+
   // Set tolerance
   tolerance = (tsp_info->dim < (int) 1000) ? lowTolerance:highTolerance;
 
@@ -214,6 +223,9 @@ int tsp::read_file(int argc, char *argv[]) {
 }
 
 void tsp::two_opt(void) {
+  // Set alarm to terminate problem once time limit is meet.
+  set_alarm();
+
   // Initialize high resolution clock variables
   std::chrono::time_point<std::chrono::high_resolution_clock> start, middle, end;
   std::chrono::duration<double> elapsed_seconds;
@@ -222,84 +234,74 @@ void tsp::two_opt(void) {
   wrapper wrapper(num_cities);
 
   for (int seed=0; seed<seedCount; seed++) {
+      improve = true;	// Allow search if true (time limit has been reached).
 
-  improve = true;	// Continue search 2-opt swaps
-  timeCap = false;	// If search time limit is exceeded, set flag
+      // Start timer
+      start = std::chrono::high_resolution_clock::now();
 
-  // Start timer
-  start = std::chrono::high_resolution_clock::now();
+      // Initialize random seed
+      srand(seed);
 
-  // Initialize random seed
-  srand(seed);
+      printf("Starting seed %d\n", seed);
 
-  printf("Starting seed %d\n", seed);
+      // Calculate initial route
+      init_route();
 
-  // Calculate initial route
-  init_route();
+      // Create ordered coordinates
+      creatOrderCoord(route);
 
-  // Create ordered coordinates
-  creatOrderCoord(route);
+      // Calculate initial route distance
+      distance = (obj.*pFun)(num_cities, orderCoords);
+      printf("Initial distance = %d\n", distance);
 
-  // Calculate initial route distance
-  distance = (obj.*pFun)(num_cities, orderCoords);
-  printf("Initial distance = %d\n", distance);
+      while(improve) {
 
-  while(improve) {
-      improve = false;
+	  // Call cuda wrapper
+	  wrapper.cuda_function(num_cities, orderCoords, gpuResult);
 
-      // Call cuda wrapper
-      wrapper.cuda_function(num_cities, orderCoords, gpuResult);
-
-      // Create new route with GPU swap result
-      swap_two();
-
-      // Create ordered coordinates from new route
-      creatOrderCoord(new_route);
-
-      // Calculate new distance
-      new_distance = (obj.*pFun)(num_cities, orderCoords);
-
-      // Check if new route distance is better than last best distance
-      if (new_distance < distance) {
-	  distance = new_distance;
-	  replace_route();
-	  improve = true;
-
-	  // If new distance is not less than the old but greater than desired
-	  // This help find global minimum
-      } else if (new_distance > (int)(tsp_info->solution * tolerance)) {
-	  get_random();
+	  // Create new route with GPU swap result
 	  swap_two();
 
 	  // Create ordered coordinates from new route
 	  creatOrderCoord(new_route);
 
-	  // Calculate new route distance
-	  distance = (obj.*pFun)(num_cities, orderCoords);
+	  // Calculate new distance
+	  new_distance = (obj.*pFun)(num_cities, orderCoords);
 
-	  replace_route();
+	  // Check if new route distance is better than last best distance
+	  if (new_distance < distance) {
+	      distance = new_distance;
+	      replace_route();
 
-	  // Follow code cause search to exit after 5 minutes
-	  middle = std::chrono::high_resolution_clock::now();
-	  elapsed_seconds = middle-start;
+	      // If new distance is greater than the old distance and
+	      // the old distance is greater than the tolerance
+	      // Swap two random edges and continue search
+	  } else if (distance > (int)(tsp_info->solution * tolerance)) {
+	      get_random();
+	      swap_two();
 
-	  if (elapsed_seconds.count() < timeLimit) {
-	      improve = true;
+	      // Create ordered coordinates from new route
+	      creatOrderCoord(new_route);
+
+	      // Calculate new route distance
+	      distance = (obj.*pFun)(num_cities, orderCoords);
+
+	      replace_route();
 	  } else {
-	      printf("***Search has exceed time limit (%d seconds)\n", timeLimit);
-	      printf("***Exit search. Continuing to next seed.\n\n");
-	      timeCap = true;
+	      // The new distance is not better than old distance and the
+	      // old distance meets the tolerance requirements
+	      // Search complete
+	      improve = false;
 	  }
       }
-  }
 
-  // Get seed runtime
-  end = std::chrono::high_resolution_clock::now();
-  elapsed_seconds = end-start;
+      // Get seed runtime
+      end = std::chrono::high_resolution_clock::now();
+      elapsed_seconds = end-start;
 
-  write_file(elapsed_seconds);
-  printf("Optimized Distance = %d: Seed %d\n\n", new_distance, seed);
-  printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
+      write_file(elapsed_seconds);
+      printf("Optimized Distance = %d: Seed %d\n\n", new_distance, seed);
+      printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
   }
 
   // Get system time
@@ -358,11 +360,7 @@ void tsp::creatOrderCoord(int *arr) {
 }
 
 void tsp::write_file(std::chrono::duration<double> elapsed_seconds) {
-  if(timeCap) {
-      myfile << elapsed_seconds.count()<< ", " << distance << ", " << "ERROR TIMECAP" << "\n";
-  } else {
-      myfile << elapsed_seconds.count()<< ", " << distance << "\n";
-  }
+  myfile << elapsed_seconds.count()<< ", " << distance << "\n";
 }
 
 void tsp::replace_route(void) {
@@ -376,3 +374,11 @@ void tsp::get_random(void) {
   gpuResult->j = rand() % (num_cities - 1) + 1;	// Can't select first or last index
 }
 
+void tsp::set_alarm(void) {
+  // Initialize alarm to 5 seconds
+    struct sigaction act;
+    act.sa_handler = handle_alarm;
+    act.sa_flags = SA_RESTART;
+    sigaction(SIGALRM, &act, NULL);
+    alarm(timeLimit);
+}

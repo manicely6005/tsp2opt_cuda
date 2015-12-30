@@ -33,6 +33,10 @@
 #include <string>
 #include <chrono>
 #include <fstream>
+#include <signal.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <unistd.h>
 #include "edge_weight.h"
 
 
@@ -40,7 +44,7 @@
 //limited by the shared memory size
 const int maxCities = 4096;
 const int timeLimit = 1200;
-const int seedCount = 1;
+const int seedCount = 50;
 const float lowTolerance = 1.05; 	// Tolerance for data sets smaller than a thousand
 const float highTolerance = 1.12;	// Tolerance for data sets larger than a thousand
 
@@ -82,7 +86,7 @@ public:
   void write_file(std::chrono::duration<double> elapsed_seconds);
   void replace_route(void);
   void get_random(void);
-
+  void set_alarm(void);
 private:
   const std::string pStr[4] = {"EUC_2D", "GEO", "ATT", "CEIL_2D"};
   int num_cities, distance, new_distance;
@@ -92,8 +96,6 @@ private:
   struct tsp_info *tsp_info;
   int *route, *new_route, *temp_route;
   int (edge_weight::*pFun) (int num_cities, struct city_coords *coords);  edge_weight obj;
-  bool improve;
-  bool timeCap;
   float tolerance;
 };
 #endif
