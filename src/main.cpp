@@ -47,6 +47,8 @@ int main(int argc, char * argv[])
   if ( myid == 0 ) {
     // only myid = 0 do this
     std::cout << numproc << " processors said hello!" << std::endl;
+  } else {
+    std::cout << numproc << " processors said hello2!" << std::endl;
   }
   
   tsp test(argc, argv); //read in command line input

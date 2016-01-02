@@ -9,10 +9,9 @@ debug:		CPPFLAGS += -g
 debug:		NVCCFLAGS += -G -lineinfo
 debug:		tsp_cuda2opt
 
-CXX	 	:= g++
+CXX	 	?= g++
 SRCDIR		:= src
 OBJDIR		:= obj
-MPICXX		:= mpic++
 
 ARCHS		:= -gencode arch=compute_20,code=sm_20 \
 		-gencode arch=compute_30,code=sm_30 \
@@ -75,16 +74,10 @@ info:
 	@echo
 
 tsp_cuda2opt: info $(OBJECTS)
-	$(MPICXX) $(OBJECTS) -o tsp_cuda2opt $(LINKFLAGS) $(CXXFLAGS) $(OMPI)
+	$(CXX) $(OBJECTS) -o tsp_cuda2opt $(LINKFLAGS) $(CXXFLAGS) $(OMPI)
 
-$(OBJDIR)/main.o: $(SRCDIR)/main.cpp $(SRCDIR)/algorithms.h
-	$(MPICXX) $(CXXFLAGS) $(OMPI) -o $(OBJDIR)/main.o -c $(SRCDIR)/main.cpp
-
-$(OBJDIR)/algorithms.o: $(SRCDIR)/algorithms.cpp $(SRCDIR)/algorithms.h $(SRCDIR)/wrapper.cuh
-	$(CXX) $(CXXFLAGS) -o $(OBJDIR)/algorithms.o -c $(SRCDIR)/algorithms.cpp
-
-$(OBJDIR)/edge_weight.o: $(SRCDIR)/edge_weight.cpp $(SRCDIR)/edge_weight.h $(SRCDIR)/algorithms.h
-	$(CXX) $(CXXFLAGS) -o $(OBJDIR)/edge_weight.o -c $(SRCDIR)/edge_weight.cpp
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(OMPI) -o $@ -c $^
 	
 $(OBJDIR)/%.o: $(SRCDIR)/%.cu
 	$(NVCC_PATH) $(NVCCFLAGS) $(ARCHS) $(LINKFLAGS) -o $@ -c $^
