@@ -62,7 +62,6 @@ tsp::tsp(int argc, char * argv[]) {
   num_cities = read_file(argc, argv);
   route = new int [num_cities+1];
   new_route = new int [num_cities+1];
-  temp_route = new int [num_cities+1];
 
   if (tsp_info->e_weight.c_str() == pStr[0]) {
       pFun = &edge_weight::euc2d;
@@ -103,7 +102,6 @@ tsp::~tsp(void) {
   delete(tsp_info);
   delete(route);
   delete(new_route);
-  delete(temp_route);
 
   // Close output file
   myfile.close();

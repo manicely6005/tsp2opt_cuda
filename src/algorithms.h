@@ -44,7 +44,7 @@
 //limited by the shared memory size
 const int maxCities = 4096;
 const int timeLimit = 1200;
-const int seedCount = 50;
+const int seedCount = 1;
 const float lowTolerance = 1.05; 	// Tolerance for data sets smaller than a thousand
 const float highTolerance = 1.12;	// Tolerance for data sets larger than a thousand
 

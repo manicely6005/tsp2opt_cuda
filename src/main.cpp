@@ -49,10 +49,10 @@ int main(int argc, char * argv[])
     std::cout << numproc << " processors said hello!" << std::endl;
   } else {
     std::cout << numproc << " processors said hello2!" << std::endl;
-  }
   
   tsp test(argc, argv); //read in command line input
   test.two_opt();
+  }
   
   MPI::Finalize();
   exit(EXIT_SUCCESS);
