@@ -9,7 +9,7 @@ debug:		CPPFLAGS += -g
 debug:		NVCCFLAGS += -G -lineinfo
 debug:		tsp_cuda2opt
 
-CXX	 	?= g++
+CXX	 	:= mpic++
 SRCDIR		:= src
 OBJDIR		:= obj
 

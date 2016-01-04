@@ -121,12 +121,12 @@ int tsp::read_file(int argc, char *argv[]) {
       filename = argv[1];
   } else {
       if (argc==1) {
-	  printf("Enter inputfile ('TSPLIB/{$FILENAME}')\n");
-	  std::cin >> input;
-	  filename = input.c_str();
+          printf("Enter inputfile ('TSPLIB/{$FILENAME}')\n");
+          std::cin >> input;
+          filename = input.c_str();
       } else {
-	  printf("usage: tsp_2opt <input file (*.tsp)>");
-	  exit(EXIT_FAILURE);
+          printf("usage: tsp_2opt <input file (*.tsp)>");
+          exit(EXIT_FAILURE);
       }
   }
 
@@ -160,7 +160,7 @@ int tsp::read_file(int argc, char *argv[]) {
   // Try to open file
   if (inputFile.is_open()) {
       while (!inputFile.eof()) {
-	  getline(inputFile, line);
+          getline(inputFile, line);
 
 	  std::istringstream iss(line);
 	  std::string result;
@@ -232,25 +232,40 @@ void tsp::two_opt(int myid, int numproc) {
   int name_len;
   MPI_Get_processor_name(processor_name, &name_len);
 
-  srand(0);
-
-  innerImprove = true;
-  improve = true;
-
   swapSend = new int [numproc*count];
   swapRecv = new int [count];
 
   wrapper wrapper(num_cities);
 
+  for (int seed=0; seed<seedCount; seed++) {
+
+      // Initialize seed
+      srand(seed);
+
+      // Initialize while loops
+      innerImprove = true;
+      improve = true;
+
   // Calculate initial route
   init_route();
+
+  if(myid == 0) {
+      printf("Starting seed %d\n", seed);
+
+      // Create ordered coordinates
+      createOrderCoord(route);
+
+      // Calculate initial route distance
+      distance = (obj.*pFun)(num_cities, orderCoords);
+      printf("Initial distance = %d\n", distance);
+    }
+
+  // Start timer
+  if (myid == 0) start = std::chrono::high_resolution_clock::now();
 
   while (improve) {
 
       if (myid == 0) {
-
-	  // Start timer
-	  start = std::chrono::high_resolution_clock::now();
 
 	  // Get number of numproc and create random set of index
 	  for (int i=0; i< numproc*count; i+=2) {		// i<1 should be i<numprocs
@@ -261,9 +276,12 @@ void tsp::two_opt(int myid, int numproc) {
       }
 
       // MPI Scatter
-      // Vector of edges
+      // The following code will send randomly generated edges produced by node 0
+      // to all nodes, including node 0. Then each node will reproduce it's initial
+      // route to begin working on.
       MPI_Scatter(swapSend, 2, MPI_INT, swapRecv, 2, MPI_INT, 0, MPI_COMM_WORLD);
 
+      // Copy randomly generated edges to gpuResult structure to match previous code.
       gpuResult->i = swapRecv[0];
       gpuResult->j = swapRecv[1];
 
@@ -279,6 +297,8 @@ void tsp::two_opt(int myid, int numproc) {
       // Calculate new route distance
       distance = (obj.*pFun)(num_cities, orderCoords);
 
+      // Each node will remain in the inner while loop until it can not find anymore
+      // improving swaps.
       while (innerImprove) {
 
 	  // Call cuda wrapper
@@ -299,36 +319,49 @@ void tsp::two_opt(int myid, int numproc) {
 	      replace_route();
 	  } else {
 	      innerImprove = false;
-	      printf("new_distance = %d: i = %d: j = %d: from myid %d and %s\n", new_distance, swapRecv[0], swapRecv[1], myid, processor_name);
-	  }
+//	      printf("new_distance = %d: i = %d: j = %d: from myid %d and %s\n", new_distance, swapRecv[0], swapRecv[1], myid, processor_name);
+          }
       }
 
       // MPI Reduce
-      // Vector of distances, calculated by each node
+      // Once no more improving swaps can be found, MPI_Reduce will deliver the
+      // smallest distances across all nodes to node 0. Node 0 will then check if
+      // the smallest distance found meets the tolerance requirements. If no, set
+      // innerImprove flag to true and repeat
       MPI_Reduce (&new_distance, &distance, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
 
       if (myid == 0) {
-	  //	  printf("distance = %d\n", distance);
-	  if (distance > (int)(tsp_info->solution * tolerance)) {
-	      innerImprove = true;
-	  } else {
-	      printf("Low distance = %d from myid = %d\n\n", distance, myid);
-	      improve = false;
-	  }
-
-	  // Get seed runtime
-	  end = std::chrono::high_resolution_clock::now();
-	  elapsed_seconds = end-start;
-
-	  //      write_file(elapsed_seconds);
-	  //      printf("Optimized Distance = %d: Seed %d\n\n", new_distance, seed);
-	  //	  printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
-
+          if (distance > (int)(tsp_info->solution * tolerance)) {
+              innerImprove = true;
+          } else {
+              improve = false;
+          }
       }
 
+      // If the smallest distance found meets requirements, MPI_Bcast will send
+      // false flags to all nodes to kill while loops.
       MPI_Bcast(&innerImprove, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
       MPI_Bcast(&improve, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
   }
+
+  if (myid == 0) {
+    // Get seed runtime
+    end = std::chrono::high_resolution_clock::now();
+    elapsed_seconds = end-start;
+
+    write_file(elapsed_seconds);
+    printf("Optimized Distance = %d: Seed %d\n\n", distance, seed);
+    printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
+  }
+    }
+
+  delete(swapSend);
+  delete(swapRecv);
+
+  // Get system time
+     std::chrono::system_clock::time_point endPoint = std::chrono::system_clock::now();
+     std::time_t end_time = std::chrono::system_clock::to_time_t(endPoint);
+     printf("finished computation at %s\n",std::ctime(&end_time));
 }
 
 void tsp::swap_two(void) {
