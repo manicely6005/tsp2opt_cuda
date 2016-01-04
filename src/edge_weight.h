@@ -38,7 +38,7 @@ public:
   int geo(int num_cities, struct city_coords *coords); // Calculates the Geographical distance to another city
   int att(int num_cities, struct city_coords *coords); // Calculates the Geographical distance to another city
   int ceil2d(int num_cities, struct city_coords *coords); // Calculates the Geographical distance to another city
-	
+
 private:
 
 };

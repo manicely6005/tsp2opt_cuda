@@ -36,8 +36,8 @@
 
 __host__ void handleError(cudaError_t err, const char *file, int line) {
   if (err != cudaSuccess) {
-      printf( "%s in %s at line %d\n", cudaGetErrorString( err ),	file, line );
-      exit( EXIT_FAILURE );
+    printf( "%s in %s at line %d\n", cudaGetErrorString( err ),	file, line );
+    exit( EXIT_FAILURE );
   }
 } // HandleError
 #define HANDLE_ERROR( err ) (handleError( err, __FILE__, __LINE__ ))
@@ -45,14 +45,14 @@ __host__ void handleError(cudaError_t err, const char *file, int line) {
 wrapper::wrapper(int num_cities) {
   // Get GPU info
   getGPU_Info();
-  
+
   // Get video card properties
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
-  
+
   // Calculate amount of shared memory per block
   dynShared = num_cities * sizeof(struct city_coords) + threadsPerBlock * sizeof(struct best_2opt);
-  
+
   // If dynamic shared memory is needed is half the shared memory resources use 2 blocks
   gridSize = (dynShared < deviceProp.sharedMemPerBlock/2) ? 2:(num_cities + threadsPerBlock - 1) / threadsPerBlock;
 
@@ -82,13 +82,13 @@ void wrapper::getGPU_Info(void) {
   HANDLE_ERROR(cudaGetDeviceCount(&deviceCount));
 
   if (deviceCount == 0) {
-      printf("There is no device supporting CUDA\n");
+    printf("There is no device supporting CUDA\n");
   } else if (deviceCount == 1) {
-      printf("Found %d CUDA Capable device\n", deviceCount);
+    printf("Found %d CUDA Capable device\n", deviceCount);
   } else if (deviceCount > 1) {
-      printf("Found %d CUDA Capable device(s)\n", deviceCount);
-      printf("Setting Device to Device 1\n\n");
-      HANDLE_ERROR(cudaSetDevice(0));
+    printf("Found %d CUDA Capable device(s)\n", deviceCount);
+    printf("Setting Device to Device 1\n\n");
+    HANDLE_ERROR(cudaSetDevice(0));
   }
 }
 
@@ -107,7 +107,7 @@ void wrapper::cuda_function(int num_cities, city_coords *h_coords, best_2opt *gp
 
   // Reduction of block results
   for (int i=1; i<gridSize; i++) {
-      if (h_block[i].minchange < h_block[0].minchange) h_block[0] = h_block[i];
+    if (h_block[i].minchange < h_block[0].minchange) h_block[0] = h_block[i];
   }
 
   // Copy best to structure used by two_opt()

@@ -52,7 +52,7 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
   register int cities = num_cities;
 
   for (register int i=tid; i<cities; i+= blockDim.x) {
-      cache[i] = coords[i];
+    cache[i] = coords[i];
   }
   __syncthreads();
 
@@ -63,24 +63,24 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
 
 #pragma unroll
   for (register int no = 0; no < iter; no++) {
-      id = idx + no * packSize;
+    id = idx + no * packSize;
 
-      if (id < max) {
-	  // Indexing Lower Triangular Matrix i = (3 + sqrt(8 * id + 1)) / 2
-	  i = (int) (3 + __fsqrt_rn(__fmul_rn((float) 8.0, __fadd_rn((float) id, (float) 1.0)))) >> 1;
-	  j = id - (i-2) * (i-1) / 2 + 1;
+    if (id < max) {
+      // Indexing Lower Triangular Matrix i = (3 + sqrt(8 * id + 1)) / 2
+      i = (int) (3 + __fsqrt_rn(__fmul_rn((float) 8.0, __fadd_rn((float) id, (float) 1.0)))) >> 1;
+      j = id - (i-2) * (i-1) / 2 + 1;
 
-	  // Calculate change
-	  change = euc2d(i, j, cache) + euc2d(i-1, j-1, cache) - euc2d(i-1, i, cache) - euc2d(j-1, j, cache);
+      // Calculate change
+      change = euc2d(i, j, cache) + euc2d(i-1, j-1, cache) - euc2d(i-1, i, cache) - euc2d(j-1, j, cache);
 
-	  // Save if local thread change is better then previous iteration best
-	  if (change < best.minchange) {
-	      best.minchange = change;
-	      best.i = i;
-	      best.j = j;
-	      best_thread[tid] = best;
-	  }
+      // Save if local thread change is better then previous iteration best
+      if (change < best.minchange) {
+        best.minchange = change;
+        best.i = i;
+        best.j = j;
+        best_thread[tid] = best;
       }
+    }
   }
   __syncthreads();
 
@@ -88,32 +88,32 @@ void find_route(int num_cities,  city_coords *coords, unsigned long long counter
   // Reductions, threadsPerBlock must be a power of 2 because of the following code
   register unsigned int k = blockDim.x >> 1;
   while (k != 32) {
-      if (threadIdx.x < k) {
-	  best_thread[tid] = (best_thread[tid + k].minchange < best_thread[tid].minchange) ? best_thread[tid + k]:best_thread[tid];
-      }
-      __syncthreads();
-      k >>= 1;
+    if (threadIdx.x < k) {
+      best_thread[tid] = (best_thread[tid + k].minchange < best_thread[tid].minchange) ? best_thread[tid + k]:best_thread[tid];
+    }
+    __syncthreads();
+    k >>= 1;
   }
 
   // No reason to sync a single warp
   if (threadIdx.x <= 32) {
-      best_thread[tid] = (best_thread[tid + 32].minchange < best_thread[tid].minchange) ? best_thread[tid + 32]:best_thread[tid];
-      best_thread[tid] = (best_thread[tid + 16].minchange < best_thread[tid].minchange) ? best_thread[tid + 16]:best_thread[tid];
-      best_thread[tid] = (best_thread[tid + 8].minchange < best_thread[tid].minchange) ? best_thread[tid + 8]:best_thread[tid];
-      best_thread[tid] = (best_thread[tid + 4].minchange < best_thread[tid].minchange) ? best_thread[tid + 4]:best_thread[tid];
-      best_thread[tid] = (best_thread[tid + 2].minchange < best_thread[tid].minchange) ? best_thread[tid + 2]:best_thread[tid];
-      best_thread[tid] = (best_thread[tid + 1].minchange < best_thread[tid].minchange) ? best_thread[tid + 1]:best_thread[tid];
+    best_thread[tid] = (best_thread[tid + 32].minchange < best_thread[tid].minchange) ? best_thread[tid + 32]:best_thread[tid];
+    best_thread[tid] = (best_thread[tid + 16].minchange < best_thread[tid].minchange) ? best_thread[tid + 16]:best_thread[tid];
+    best_thread[tid] = (best_thread[tid + 8].minchange < best_thread[tid].minchange) ? best_thread[tid + 8]:best_thread[tid];
+    best_thread[tid] = (best_thread[tid + 4].minchange < best_thread[tid].minchange) ? best_thread[tid + 4]:best_thread[tid];
+    best_thread[tid] = (best_thread[tid + 2].minchange < best_thread[tid].minchange) ? best_thread[tid + 2]:best_thread[tid];
+    best_thread[tid] = (best_thread[tid + 1].minchange < best_thread[tid].minchange) ? best_thread[tid + 1]:best_thread[tid];
   }
 
   // Copying best match from each block to global memory. Reduction will be performed on CPU
   if (threadIdx.x == 0) {
-      best_block[blockIdx.x] = best_thread[threadIdx.x];
+    best_block[blockIdx.x] = best_thread[threadIdx.x];
   }
 }
 
 __inline__ __device__ int euc2d(int i, int j, struct city_coords *coords) {
   register float xi, yi, xj, yj, xd, yd;
-  
+
   xi = coords[i].x;
   yi = coords[i].y;
   xj = coords[j].x;

@@ -65,16 +65,16 @@ tsp::tsp(int argc, char * argv[]) {
   new_route = new int [num_cities+1];
 
   if (tsp_info->e_weight.c_str() == pStr[0]) {
-      pFun = &edge_weight::euc2d;
+    pFun = &edge_weight::euc2d;
   } else if (tsp_info->e_weight.c_str() == pStr[1]) {
-      pFun = &edge_weight::geo;
+    pFun = &edge_weight::geo;
   } else if (tsp_info->e_weight.c_str() == pStr[2]) {
-      pFun = &edge_weight::att;
+    pFun = &edge_weight::att;
   } else if (tsp_info->e_weight.c_str() == pStr[3]) {
-      pFun = &edge_weight::ceil2d;
+    pFun = &edge_weight::ceil2d;
   } else {
-      printf("Error calculating distance\n");
-      exit(EXIT_FAILURE);
+    printf("Error calculating distance\n");
+    exit(EXIT_FAILURE);
   }
 
   // Create filename with timestamp
@@ -90,8 +90,8 @@ tsp::tsp(int argc, char * argv[]) {
   // Open output file
   myfile.open(oss.str(), std::ofstream::out | std::ofstream::app);
   if (!myfile.good()) {
-      printf("Couldn't open output file.");
-      exit(EXIT_FAILURE);
+    printf("Couldn't open output file.");
+    exit(EXIT_FAILURE);
   }
 
   // Set alarm to terminate problem once time limit is meet.
@@ -117,17 +117,17 @@ int tsp::read_file(int argc, char *argv[]) {
   std::string input;
 
   if (argc==2) {
-      (void)(input);
-      filename = argv[1];
+    (void)(input);
+    filename = argv[1];
   } else {
-      if (argc==1) {
-          printf("Enter inputfile ('TSPLIB/{$FILENAME}')\n");
-          std::cin >> input;
-          filename = input.c_str();
-      } else {
-          printf("usage: tsp_2opt <input file (*.tsp)>");
-          exit(EXIT_FAILURE);
-      }
+    if (argc==1) {
+      printf("Enter inputfile ('TSPLIB/{$FILENAME}')\n");
+      std::cin >> input;
+      filename = input.c_str();
+    } else {
+      printf("usage: tsp_2opt <input file (*.tsp)>");
+      exit(EXIT_FAILURE);
+    }
   }
 
   if  (!strcmp 		(filename,"TSPLIB/a280.tsp")) 		tsp_info->solution = 2579;
@@ -159,47 +159,47 @@ int tsp::read_file(int argc, char *argv[]) {
 
   // Try to open file
   if (inputFile.is_open()) {
-      while (!inputFile.eof()) {
-          getline(inputFile, line);
+    while (!inputFile.eof()) {
+      getline(inputFile, line);
 
-	  std::istringstream iss(line);
-	  std::string result;
+      std::istringstream iss(line);
+      std::string result;
 
-	  if (!line.find("NAME")) {
-	      std::getline(iss, result, ':');
-	      std::getline(iss, result, '\n');
-	      result.erase(remove_if(result.begin(), result.end(), isspace), result.end());
-	      tsp_info->name = result;
+      if (!line.find("NAME")) {
+        std::getline(iss, result, ':');
+        std::getline(iss, result, '\n');
+        result.erase(remove_if(result.begin(), result.end(), isspace), result.end());
+        tsp_info->name = result;
 
-	  }	else if (!line.find("TYPE")) {
-	      std::getline(iss, result, ':');
-	      std::getline(iss, result, '\n');
-	      result.erase(remove_if(result.begin(), result.end(), isspace), result.end());
-	      tsp_info->type = result;
+      }	else if (!line.find("TYPE")) {
+        std::getline(iss, result, ':');
+        std::getline(iss, result, '\n');
+        result.erase(remove_if(result.begin(), result.end(), isspace), result.end());
+        tsp_info->type = result;
 
-	  } else if (!line.find("DIMENSION")) {
-	      std::getline(iss, result, ':');
-	      std::getline(iss, result, '\n');
-	      tsp_info->dim = std::stoi(result);
+      } else if (!line.find("DIMENSION")) {
+        std::getline(iss, result, ':');
+        std::getline(iss, result, '\n');
+        tsp_info->dim = std::stoi(result);
 
-	  } else if (!line.find("EDGE_WEIGHT_TYPE")) {
-	      std::getline(iss, result, ':');
-	      std::getline(iss, result, '\n');
-	      result.erase(remove_if(result.begin(), result.end(), isspace), result.end());
-	      tsp_info->e_weight = result;
+      } else if (!line.find("EDGE_WEIGHT_TYPE")) {
+        std::getline(iss, result, ':');
+        std::getline(iss, result, '\n');
+        result.erase(remove_if(result.begin(), result.end(), isspace), result.end());
+        tsp_info->e_weight = result;
 
-	  }  else {
-	      std::istringstream in(line);
-	      try {
-		  std::copy(std::istream_iterator<float> (in), std::istream_iterator<float>(), std::back_inserter(coord));
-	      } catch (std::exception const & e) {
-		  // Empty
-	      }
-	  }
+      }  else {
+        std::istringstream in(line);
+        try {
+          std::copy(std::istream_iterator<float> (in), std::istream_iterator<float>(), std::back_inserter(coord));
+        } catch (std::exception const & e) {
+          // Empty
+        }
       }
+    }
   } else {
-      printf("Unable to open file\n");
-      exit(EXIT_FAILURE);
+    printf("Unable to open file\n");
+    exit(EXIT_FAILURE);
   }
 
   // close file
@@ -207,8 +207,8 @@ int tsp::read_file(int argc, char *argv[]) {
 
   // copy coordinates to structure
   for (int i=0; i<tsp_info->dim; i++) {
-      inputCoords[i].x = coord[i*3+1];
-      inputCoords[i].y = coord[i*3+2];
+    inputCoords[i].x = coord[i*3+1];
+    inputCoords[i].y = coord[i*3+2];
   }
 
   //  printf("Name = %s\n", tsp_info->name.c_str());
@@ -239,17 +239,17 @@ void tsp::two_opt(int myid, int numproc) {
 
   for (int seed=0; seed<seedCount; seed++) {
 
-      // Initialize seed
-      srand(seed);
+    // Initialize seed
+    srand(seed);
 
-      // Initialize while loops
-      innerImprove = true;
-      improve = true;
+    // Initialize while loops
+    innerImprove = true;
+    improve = true;
 
-  // Calculate initial route
-  init_route();
+    // Calculate initial route
+    init_route();
 
-  if(myid == 0) {
+    if(myid == 0) {
       printf("Starting seed %d\n", seed);
 
       // Create ordered coordinates
@@ -260,19 +260,19 @@ void tsp::two_opt(int myid, int numproc) {
       printf("Initial distance = %d\n", distance);
     }
 
-  // Start timer
-  if (myid == 0) start = std::chrono::high_resolution_clock::now();
+    // Start timer
+    if (myid == 0) start = std::chrono::high_resolution_clock::now();
 
-  while (improve) {
+    while (improve) {
 
       if (myid == 0) {
 
-	  // Get number of numproc and create random set of index
-	  for (int i=0; i< numproc*count; i+=2) {		// i<1 should be i<numprocs
-	      swapSend[i] = rand() % (num_cities - 1) + 2;	// Index range 1 to num_cities
-	      swapSend[i+1] = rand() % (num_cities - 1) + 1;	// Can't select first or last index
-	      //	      printf("swapSend[i] = %d: swapSend[i+1] = %d\n", swapSend[i], swapSend[i+1]);
-	  }
+        // Get number of numproc and create random set of index
+        for (int i=0; i< numproc*count; i+=2) {		// i<1 should be i<numprocs
+          swapSend[i] = rand() % (num_cities - 1) + 2;	// Index range 1 to num_cities
+          swapSend[i+1] = rand() % (num_cities - 1) + 1;	// Can't select first or last index
+          //	      printf("swapSend[i] = %d: swapSend[i+1] = %d\n", swapSend[i], swapSend[i+1]);
+        }
       }
 
       // MPI Scatter
@@ -301,26 +301,26 @@ void tsp::two_opt(int myid, int numproc) {
       // improving swaps.
       while (innerImprove) {
 
-	  // Call cuda wrapper
-	  wrapper.cuda_function(num_cities, orderCoords, gpuResult);
+        // Call cuda wrapper
+        wrapper.cuda_function(num_cities, orderCoords, gpuResult);
 
-	  // Create new route with GPU swap result
-	  swap_two();
+        // Create new route with GPU swap result
+        swap_two();
 
-	  // Create ordered coordinates from new route
-	  createOrderCoord(new_route);
+        // Create ordered coordinates from new route
+        createOrderCoord(new_route);
 
-	  // Calculate new distance
-	  new_distance = (obj.*pFun)(num_cities, orderCoords);
+        // Calculate new distance
+        new_distance = (obj.*pFun)(num_cities, orderCoords);
 
-	  // Check if new route distance is better than last best distance
-	  if (new_distance < distance) {
-	      distance = new_distance;
-	      replace_route();
-	  } else {
-	      innerImprove = false;
-//	      printf("new_distance = %d: i = %d: j = %d: from myid %d and %s\n", new_distance, swapRecv[0], swapRecv[1], myid, processor_name);
-          }
+        // Check if new route distance is better than last best distance
+        if (new_distance < distance) {
+          distance = new_distance;
+          replace_route();
+        } else {
+          innerImprove = false;
+          //	      printf("new_distance = %d: i = %d: j = %d: from myid %d and %s\n", new_distance, swapRecv[0], swapRecv[1], myid, processor_name);
+        }
       }
 
       // MPI Reduce
@@ -331,37 +331,37 @@ void tsp::two_opt(int myid, int numproc) {
       MPI_Reduce (&new_distance, &distance, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
 
       if (myid == 0) {
-          if (distance > (int)(tsp_info->solution * tolerance)) {
-              innerImprove = true;
-          } else {
-              improve = false;
-          }
+        if (distance > (int)(tsp_info->solution * tolerance)) {
+          innerImprove = true;
+        } else {
+          improve = false;
+        }
       }
 
       // If the smallest distance found meets requirements, MPI_Bcast will send
       // false flags to all nodes to kill while loops.
       MPI_Bcast(&innerImprove, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
       MPI_Bcast(&improve, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
-  }
-
-  if (myid == 0) {
-    // Get seed runtime
-    end = std::chrono::high_resolution_clock::now();
-    elapsed_seconds = end-start;
-
-    write_file(elapsed_seconds);
-    printf("Optimized Distance = %d: Seed %d\n\n", distance, seed);
-    printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
-  }
     }
+
+    if (myid == 0) {
+      // Get seed runtime
+      end = std::chrono::high_resolution_clock::now();
+      elapsed_seconds = end-start;
+
+      write_file(elapsed_seconds);
+      printf("Optimized Distance = %d: Seed %d\n\n", distance, seed);
+      printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
+    }
+  }
 
   delete(swapSend);
   delete(swapRecv);
 
   // Get system time
-     std::chrono::system_clock::time_point endPoint = std::chrono::system_clock::now();
-     std::time_t end_time = std::chrono::system_clock::to_time_t(endPoint);
-     printf("finished computation at %s\n",std::ctime(&end_time));
+  std::chrono::system_clock::time_point endPoint = std::chrono::system_clock::now();
+  std::time_t end_time = std::chrono::system_clock::to_time_t(endPoint);
+  printf("finished computation at %s\n",std::ctime(&end_time));
 }
 
 void tsp::swap_two(void) {
@@ -370,46 +370,46 @@ void tsp::swap_two(void) {
 
   // There's an issue, corrected with i
   if (gpuResult->i < gpuResult->j) {
-      i = gpuResult->i-1;
-      j = gpuResult->j;
+    i = gpuResult->i-1;
+    j = gpuResult->j;
   } else {
-      i = gpuResult->j;
-      j = gpuResult->i-1;
+    i = gpuResult->j;
+    j = gpuResult->i-1;
   }
 
   for (c=0; c<i; c++) {
-      new_route[count] = route[c];
-      count++;
+    new_route[count] = route[c];
+    count++;
   }
 
   for (c=j; c>i-1; c--) {
-      new_route[count] = route[c];
-      count++;
+    new_route[count] = route[c];
+    count++;
   }
 
   for (c=j+1; c<num_cities+1; c++) {
-      new_route[count] = route[c];
-      count++;
+    new_route[count] = route[c];
+    count++;
   }
 }
 
 void tsp::init_route(void) {
   for (int i=0; i<num_cities; i++) {
-      route[i] = i+1;
+    route[i] = i+1;
   }
   route[num_cities] = 1;      // Return to beginning of tour
 }
 
 void tsp::print(int *arr) {
   for (int i=0; i<num_cities+1; i++) {
-      printf("%d ", arr[i]);
+    printf("%d ", arr[i]);
   }
   printf("\n\n");
 }
 
 void tsp::createOrderCoord(int *arr) {
   for (int i=0; i<num_cities+1; i++) {
-      orderCoords[i] = inputCoords[arr[i]-1];
+    orderCoords[i] = inputCoords[arr[i]-1];
   }
 }
 

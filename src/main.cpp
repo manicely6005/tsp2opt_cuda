@@ -35,14 +35,14 @@ int main(int argc, char * argv[])
   int rank, numproc;
   // Initialize MPI
   MPI::Init(argc, argv);
-  
+
   // Get myid and # of processors 
   MPI_Comm_size(MPI_COMM_WORLD, &numproc);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  
+
   tsp test(argc, argv); //read in command line input
   test.two_opt(rank, numproc);
-  
+
   MPI::Finalize();
   exit(EXIT_SUCCESS);
 }
