@@ -32,27 +32,16 @@
 
 int main(int argc, char * argv[])
 {
+  int rank, numproc;
   // Initialize MPI
   MPI::Init(argc, argv);
   
   // Get myid and # of processors 
-  int numproc = MPI::COMM_WORLD.Get_size();
-  int myid = MPI::COMM_WORLD.Get_rank();
-  
-  std::cout << "hello from " << myid << std::endl;
- 
-  // wait until all processors come here 
-  MPI::COMM_WORLD.Barrier();
- 
-  if ( myid == 0 ) {
-    // only myid = 0 do this
-    std::cout << numproc << " processors said hello!" << std::endl;
-  } else {
-    std::cout << numproc << " processors said hello2!" << std::endl;
+  MPI_Comm_size(MPI_COMM_WORLD, &numproc);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   tsp test(argc, argv); //read in command line input
-  test.two_opt();
-  }
+  test.two_opt(rank, numproc);
   
   MPI::Finalize();
   exit(EXIT_SUCCESS);

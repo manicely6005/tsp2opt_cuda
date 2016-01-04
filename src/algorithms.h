@@ -47,6 +47,7 @@ const int timeLimit = 1200;
 const int seedCount = 1;
 const float lowTolerance = 1.05; 	// Tolerance for data sets smaller than a thousand
 const float highTolerance = 1.12;	// Tolerance for data sets larger than a thousand
+const int count = 2;
 
 struct city_coords{
   float x;
@@ -78,15 +79,16 @@ public:
   tsp(tsp & source);
   ~tsp(void);
   int read_file(int argc, char *argv[]); // Reads a list of cities into original_list from filename
-  void two_opt(void); // Attempt at 2-opt
-  void swap_two(); // Used by two_opt()
+  void two_opt(int myid, int numproc); // Attempt at 2-opt
+  void swap_two(void); // Used by two_opt()
   void init_route(void); // Calculate initial route
   void print(int *arr);
-  void creatOrderCoord(int *arr);
+  void createOrderCoord(int *arr);
   void write_file(std::chrono::duration<double> elapsed_seconds);
   void replace_route(void);
   void get_random(void);
   void set_alarm(void);
+
 private:
   const std::string pStr[4] = {"EUC_2D", "GEO", "ATT", "CEIL_2D"};
   int num_cities, distance, new_distance;
@@ -96,6 +98,11 @@ private:
   struct tsp_info *tsp_info;
   int *route, *new_route, *temp_route;
   int (edge_weight::*pFun) (int num_cities, struct city_coords *coords);  edge_weight obj;
+  void (tsp::*func) (int);
   float tolerance;
+  std::chrono::time_point<std::chrono::high_resolution_clock> start, middle, end;
+  std::chrono::duration<double> elapsed_seconds;
+  int *swapSend, *swapRecv;
+  bool innerImprove;
 };
 #endif

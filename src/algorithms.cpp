@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <string>
 #include <ctime>
+#include <mpi.h>
 #include "algorithms.h"
 #include "edge_weight.h"
 #include "wrapper.cuh"
@@ -44,7 +45,7 @@
 std::ofstream myfile;
 
 // Continue search if true
-volatile sig_atomic_t improve;
+bool improve;
 
 // Function to handle alarm signal
 void handle_alarm(int) {
@@ -92,6 +93,9 @@ tsp::tsp(int argc, char * argv[]) {
       printf("Couldn't open output file.");
       exit(EXIT_FAILURE);
   }
+
+  // Set alarm to terminate problem once time limit is meet.
+  set_alarm();
 }
 
 // Destructor clears the deques
@@ -207,12 +211,12 @@ int tsp::read_file(int argc, char *argv[]) {
       inputCoords[i].y = coord[i*3+2];
   }
 
-  printf("Name = %s\n", tsp_info->name.c_str());
-  printf("Type = %s\n", tsp_info->type.c_str());
-  printf("Dimension = %d\n", tsp_info->dim);
-  printf("Edge Weight = %s\n", tsp_info->e_weight.c_str());
-  printf("Solution = %d\n", tsp_info->solution);
-  printf("\n");
+  //  printf("Name = %s\n", tsp_info->name.c_str());
+  //  printf("Type = %s\n", tsp_info->type.c_str());
+  //  printf("Dimension = %d\n", tsp_info->dim);
+  //  printf("Edge Weight = %s\n", tsp_info->e_weight.c_str());
+  //  printf("Solution = %d\n", tsp_info->solution);
+  //  printf("\n");
 
   // Set tolerance
   tolerance = (tsp_info->dim < (int) 1000) ? lowTolerance:highTolerance;
@@ -220,39 +224,62 @@ int tsp::read_file(int argc, char *argv[]) {
   return (tsp_info->dim);
 }
 
-void tsp::two_opt(void) {
-  // Set alarm to terminate problem once time limit is meet.
-  set_alarm();
+void tsp::two_opt(int myid, int numproc) {
+  printf("myid = %d: numproc = %d\n", myid, numproc);
 
-  // Initialize high resolution clock variables
-  std::chrono::time_point<std::chrono::high_resolution_clock> start, middle, end;
-  std::chrono::duration<double> elapsed_seconds;
+  // Get the name of the processor
+  char processor_name[MPI_MAX_PROCESSOR_NAME];
+  int name_len;
+  MPI_Get_processor_name(processor_name, &name_len);
 
-  // Create objects
+  srand(0);
+
+  innerImprove = true;
+  improve = true;
+
+  swapSend = new int [numproc*count];
+  swapRecv = new int [count];
+
   wrapper wrapper(num_cities);
 
-  for (int seed=0; seed<seedCount; seed++) {
-      improve = true;	// Allow search if true (time limit has been reached).
+  // Calculate initial route
+  init_route();
 
-      // Start timer
-      start = std::chrono::high_resolution_clock::now();
+  while (improve) {
 
-      // Initialize random seed
-      srand(seed);
+      if (myid == 0) {
 
-      printf("Starting seed %d\n", seed);
+	  // Start timer
+	  start = std::chrono::high_resolution_clock::now();
 
-      // Calculate initial route
-      init_route();
+	  // Get number of numproc and create random set of index
+	  for (int i=0; i< numproc*count; i+=2) {		// i<1 should be i<numprocs
+	      swapSend[i] = rand() % (num_cities - 1) + 2;	// Index range 1 to num_cities
+	      swapSend[i+1] = rand() % (num_cities - 1) + 1;	// Can't select first or last index
+	      //	      printf("swapSend[i] = %d: swapSend[i+1] = %d\n", swapSend[i], swapSend[i+1]);
+	  }
+      }
 
-      // Create ordered coordinates
-      creatOrderCoord(route);
+      // MPI Scatter
+      // Vector of edges
+      MPI_Scatter(swapSend, 2, MPI_INT, swapRecv, 2, MPI_INT, 0, MPI_COMM_WORLD);
 
-      // Calculate initial route distance
+      gpuResult->i = swapRecv[0];
+      gpuResult->j = swapRecv[1];
+
+      // Swaps two edges in route to create new_route
+      swap_two();
+
+      // Creates order coordinates from new_route
+      createOrderCoord(new_route);
+
+      // Replace route with new_route. This is for the first swap_two() in the while loop
+      replace_route();
+
+      // Calculate new route distance
       distance = (obj.*pFun)(num_cities, orderCoords);
-      printf("Initial distance = %d\n", distance);
 
-      while(improve) {
+      while (innerImprove) {
 
 	  // Call cuda wrapper
 	  wrapper.cuda_function(num_cities, orderCoords, gpuResult);
@@ -261,7 +288,7 @@ void tsp::two_opt(void) {
 	  swap_two();
 
 	  // Create ordered coordinates from new route
-	  creatOrderCoord(new_route);
+	  createOrderCoord(new_route);
 
 	  // Calculate new distance
 	  new_distance = (obj.*pFun)(num_cities, orderCoords);
@@ -270,42 +297,38 @@ void tsp::two_opt(void) {
 	  if (new_distance < distance) {
 	      distance = new_distance;
 	      replace_route();
-
-	      // If new distance is greater than the old distance and
-	      // the old distance is greater than the tolerance
-	      // Swap two random edges and continue search
-	  } else if (distance > (int)(tsp_info->solution * tolerance)) {
-	      get_random();
-	      swap_two();
-
-	      // Create ordered coordinates from new route
-	      creatOrderCoord(new_route);
-
-	      // Calculate new route distance
-	      distance = (obj.*pFun)(num_cities, orderCoords);
-
-	      replace_route();
 	  } else {
-	      // The new distance is not better than old distance and the
-	      // old distance meets the tolerance requirements
-	      // Search complete
-	      improve = false;
+	      innerImprove = false;
+	      printf("new_distance = %d: i = %d: j = %d: from myid %d and %s\n", new_distance, swapRecv[0], swapRecv[1], myid, processor_name);
 	  }
       }
 
-      // Get seed runtime
-      end = std::chrono::high_resolution_clock::now();
-      elapsed_seconds = end-start;
+      // MPI Reduce
+      // Vector of distances, calculated by each node
+      MPI_Reduce (&new_distance, &distance, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
 
-      write_file(elapsed_seconds);
-      printf("Optimized Distance = %d: Seed %d\n\n", new_distance, seed);
-      printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
+      if (myid == 0) {
+	  //	  printf("distance = %d\n", distance);
+	  if (distance > (int)(tsp_info->solution * tolerance)) {
+	      innerImprove = true;
+	  } else {
+	      printf("Low distance = %d from myid = %d\n\n", distance, myid);
+	      improve = false;
+	  }
+
+	  // Get seed runtime
+	  end = std::chrono::high_resolution_clock::now();
+	  elapsed_seconds = end-start;
+
+	  //      write_file(elapsed_seconds);
+	  //      printf("Optimized Distance = %d: Seed %d\n\n", new_distance, seed);
+	  //	  printf("elapsed time: %f seconds\n\n", elapsed_seconds.count());
+
+      }
+
+      MPI_Bcast(&innerImprove, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+      MPI_Bcast(&improve, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
   }
-
-  // Get system time
-  std::chrono::system_clock::time_point endPoint = std::chrono::system_clock::now();
-  std::time_t end_time = std::chrono::system_clock::to_time_t(endPoint);
-  printf("finished computation at %s\n",std::ctime(&end_time));
 }
 
 void tsp::swap_two(void) {
@@ -351,7 +374,7 @@ void tsp::print(int *arr) {
   printf("\n\n");
 }
 
-void tsp::creatOrderCoord(int *arr) {
+void tsp::createOrderCoord(int *arr) {
   for (int i=0; i<num_cities+1; i++) {
       orderCoords[i] = inputCoords[arr[i]-1];
   }
@@ -374,9 +397,9 @@ void tsp::get_random(void) {
 
 void tsp::set_alarm(void) {
   // Initialize alarm to 5 seconds
-    struct sigaction act;
-    act.sa_handler = handle_alarm;
-    act.sa_flags = SA_RESTART;
-    sigaction(SIGALRM, &act, NULL);
-    alarm(timeLimit);
+  struct sigaction act;
+  act.sa_handler = handle_alarm;
+  act.sa_flags = SA_RESTART;
+  sigaction(SIGALRM, &act, NULL);
+  alarm(timeLimit);
 }
